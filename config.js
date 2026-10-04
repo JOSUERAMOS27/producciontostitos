@@ -1,8 +1,10 @@
-// Pega aquí la configuración de tu proyecto de Firebase
-// (Consola de Firebase > Configuración del proyecto > Tus apps > Configuración del SDK).
+// Configuración del proyecto de Firebase "producciontostitos".
+// Estos datos no son secretos: la seguridad la dan las reglas de Firestore.
 window.FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  appId: ""
+  apiKey: "AIzaSyC_6eBFoBO9mtxIPTfuVgO7Gq_yhuKARzU",
+  authDomain: "producciontostitos.firebaseapp.com",
+  projectId: "producciontostitos",
+  storageBucket: "producciontostitos.firebasestorage.app",
+  messagingSenderId: "909751862088",
+  appId: "1:909751862088:web:35c8548afacc97dbb0e97d"
 };
