@@ -1,6 +1,6 @@
 # Tostitos · Producción y ventas
 
-Sistema web para la fábrica de tostones Tostitos: materias primas (con unidades de compra como kg, cesta, ciento o millar), recetas, producción con costo por unidad, ventas, proveedores y clientes. Descarga todo en Excel.
+Sistema web básico para la fábrica de tostones Tostitos: gastos en materia prima y producción, producción por tipo de tostón, ventas y lo que debe cada cliente. Descarga todo en Excel.
 
 ## Cómo funciona
 
