@@ -298,7 +298,7 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
     if(n==="db")return dbReady;
     if(n==="downloads")return {save:async({filename,data})=>{const b=new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return{status:"saved"}}};
     return null}};
-  if(!window.FIREBASE_CONFIG||!window.FIREBASE_CONFIG.apiKey){msg.textContent="Falta configurar Firebase (config.js).";return}
+  if(!window.FIREBASE_CONFIG||!window.FIREBASE_CONFIG.apiKey){box.hidden=false;document.getElementById("loginBtn").hidden=true;msg.textContent="Falta configurar Firebase (config.js).";return}
   firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth=firebase.auth(),fs=firebase.firestore();
   try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
