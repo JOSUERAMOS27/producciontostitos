@@ -2,6 +2,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">
 <style>
+[hidden]{display:none!important}
 /* Layout: barra superior con marca + pestañas; cada pestaña = formulario a la izquierda, lista a la derecha (se apilan en teléfono) */
 :root{
   --bg:#f6f7f1; --surface:#ffffff; --sunk:#eef0e6; --line:#dfe2d3;
@@ -159,8 +160,9 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
     <p class="lead">Anota cada compra de materia prima (plátano, aceite, bolsas, saborizantes) y los gastos de producción (gas, luz, mano de obra).</p>
     <div class="cols">
       <div class="card">
-        <h3>Nuevo gasto</h3>
+        <h3 id="gaTitle">Nuevo gasto</h3>
         <form id="fGasto">
+          <input type="hidden" id="gaId">
           <div class="row2">
             <label for="gaFecha">Fecha<input id="gaFecha" type="date" required></label>
             <label for="gaTipo">Tipo de gasto<select id="gaTipo"><option>Materia prima</option><option>Producción</option><option>Otro</option></select></label>
@@ -175,7 +177,7 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
             <label for="gaProv">Proveedor<input id="gaProv" list="gaProvList" placeholder="Opcional"><datalist id="gaProvList"></datalist></label>
           </div>
           <div class="calc" id="gaCalc" hidden></div>
-          <div class="btns"><button class="btn" type="submit">Guardar gasto</button></div>
+          <div class="btns"><button class="btn" type="submit" id="gaSave">Guardar gasto</button><button class="btn ghost" type="button" id="gaCancel" hidden>Cancelar</button></div>
         </form>
       </div>
       <div class="card" style="min-width:0"><h3>Gastos registrados</h3><div class="tablebox" id="lGastos"></div></div>
@@ -189,8 +191,9 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
     <div class="cols">
       <div style="display:grid;gap:20px">
         <div class="card">
-          <h3>Registrar producción</h3>
+          <h3 id="pdTitle">Registrar producción</h3>
           <form id="fProd">
+            <input type="hidden" id="pdId">
             <div class="row2">
               <label for="pdFecha">Fecha<input id="pdFecha" type="date" required></label>
               <label for="pdTipo">Tipo de tostón<select id="pdTipo" required></select></label>
@@ -200,7 +203,7 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
             <label for="pdPrecio">Precio de venta por unidad<input id="pdPrecio" type="number" step="any" min="0" placeholder="Se llena con el precio del tipo"></label>
             <div class="calc" id="pdCalc"></div>
             <label for="pdNota">Nota<input id="pdNota" placeholder="Opcional"></label>
-            <div class="btns"><button class="btn" type="submit">Guardar producción</button></div>
+            <div class="btns"><button class="btn" type="submit" id="pdSave">Guardar producción</button><button class="btn ghost" type="button" id="pdCancel" hidden>Cancelar</button></div>
           </form>
         </div>
         <div class="card">
@@ -224,8 +227,9 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
     <p class="lead">Si el cliente no paga todo, lo que falta queda como deuda en “Clientes y deudas”.</p>
     <div class="cols">
       <div class="card">
-        <h3>Nueva venta</h3>
+        <h3 id="veTitle">Nueva venta</h3>
         <form id="fVenta">
+          <input type="hidden" id="veId">
           <div class="row2">
             <label for="veFecha">Fecha<input id="veFecha" type="date" required></label>
             <label for="veCli">Cliente<select id="veCli"></select></label>
@@ -240,7 +244,7 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
             <label for="vePagado" id="vePagadoLbl" hidden>Cuánto pagó<input id="vePagado" type="number" step="any" min="0"></label>
           </div>
           <div class="calc" id="veCalc"></div>
-          <div class="btns"><button class="btn" type="submit">Guardar venta</button></div>
+          <div class="btns"><button class="btn" type="submit" id="veSave">Guardar venta</button><button class="btn ghost" type="button" id="veCancel" hidden>Cancelar</button></div>
         </form>
       </div>
       <div class="card" style="min-width:0"><h3>Ventas registradas</h3><div class="tablebox" id="lVentas"></div></div>
@@ -315,6 +319,14 @@ document.addEventListener("click",e=>{
   b.dataset.armed="1";const old=b.textContent;b.textContent="¿Seguro?";
   setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=old}},3000);
 });
+const editBtn=(k,id)=>`<button class="btn sm ghost" data-edit="${k}" data-id="${esc(id)}">Editar</button>`;
+const rowBtns=(k,col,id,l)=>`<span class="btns" style="justify-content:flex-end">${editBtn(k,id)}${delBtn(col,id,l)}</span>`;
+/* Pone un formulario en modo edición (o lo devuelve a modo nuevo) */
+function modoEditar(pre,on,titulo,nuevo){$(pre+"Title").textContent=on?titulo:nuevo;$(pre+"Cancel").hidden=!on;$(pre+"Save").textContent=on?"Guardar cambios":$(pre+"Save").dataset.txt;
+  if(on){const f=$(pre+"Title").closest(".card");f.scrollIntoView({behavior:"smooth",block:"start"})}}
+["ga","pd","ve"].forEach(p=>{const b=$(p+"Save");if(b)b.dataset.txt=b.textContent});
+const EDIT={};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-edit]");if(!b)return;const f=EDIT[b.dataset.edit];if(f)f(b.dataset.id)});
 const delBtn=(col,id,l)=>`<button class="btn sm danger" data-col="${col}" data-del="${esc(id)}">${l||"Borrar"}</button>`;
 async function start(){
   let c=null;try{c=await window.claude?.use?.("db")}catch(e){}
@@ -347,12 +359,16 @@ function calcGasto(){const c=num($("gaCant").value),m=num($("gaMonto").value),u=
 $("gaDesc").addEventListener("change",()=>{ // recuerda la última unidad y tipo usados para esa compra
   const d=$("gaDesc").value.trim().toLowerCase();const last=sortF(S.gastos).find(g=>String(g.descripcion).toLowerCase()===d);
   if(last){if(last.unidad)$("gaUnidad").value=last.unidad;$("gaTipo").value=last.tipo||"Materia prima";if(last.proveedor&&!$("gaProv").value)$("gaProv").value=last.proveedor}});
+function resetGasto(){$("gaId").value="";["gaDesc","gaCant","gaMonto","gaProv"].forEach(id=>$(id).value="");modoEditar("ga",false,"","Nuevo gasto");calcGasto()}
+$("gaCancel").onclick=resetGasto;
+EDIT.gasto=id=>{const g=byId("gastos",id);if(!g)return;$("gaId").value=g.id;$("gaFecha").value=g.fecha||today();$("gaTipo").value=g.tipo||"Materia prima";$("gaDesc").value=g.descripcion||"";
+  $("gaCant").value=num(g.cantidad)>0?g.cantidad:"";$("gaUnidad").value=g.unidad||"";$("gaMonto").value=g.monto||"";$("gaProv").value=g.proveedor||"";calcGasto();modoEditar("ga",true,"Editar gasto: "+g.descripcion)};
 $("fGasto").addEventListener("submit",async e=>{
-  e.preventDefault();
+  e.preventDefault();const id=$("gaId").value;const prev=id?byId("gastos",id):null;if(id&&!prev){toast("Ese gasto ya fue borrado");resetGasto();return}
   const d={fecha:$("gaFecha").value||today(),tipo:$("gaTipo").value,descripcion:$("gaDesc").value.trim(),cantidad:num($("gaCant").value),
-    unidad:$("gaUnidad").value,monto:num($("gaMonto").value),proveedor:$("gaProv").value.trim(),creado:Date.now()};
+    unidad:$("gaUnidad").value,monto:num($("gaMonto").value),proveedor:$("gaProv").value.trim(),creado:prev?.creado||Date.now()};
   if(!d.descripcion||d.monto<=0){toast("Escribe qué compraste y cuánto pagaste");return}
-  if(await save("gastos",null,d)){toast("Gasto guardado");["gaDesc","gaCant","gaMonto","gaProv"].forEach(id=>$(id).value="");calcGasto();$("gaDesc").focus()}
+  if(await save("gastos",id||null,d)){toast(id?"Gasto actualizado":"Gasto guardado");resetGasto();if(!id)$("gaDesc").focus()}
 });
 function renderGastos(){
   const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y,"es"));
@@ -362,7 +378,7 @@ function renderGastos(){
   $("lGastos").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Gasto</th><th class="n">Cantidad</th><th class="n">Total</th><th></th></tr></thead><tbody>${
     L.map(g=>`<tr><td>${fdate(g.fecha)}</td><td><b>${esc(g.descripcion)}</b><span class="s">${esc(g.tipo)}${g.proveedor?" · "+esc(g.proveedor):""}</span></td>
     <td class="n">${num(g.cantidad)>0?qty(g.cantidad)+" "+esc(g.unidad||""):"—"}${num(g.cantidad)>0?`<span class="s">${money(num(g.monto)/num(g.cantidad))} c/${esc(g.unidad||"u")}</span>`:""}</td>
-    <td class="n">${money(g.monto)}</td><td class="n">${delBtn("gastos",g.id)}</td></tr>`).join("")
+    <td class="n">${money(g.monto)}</td><td class="n">${rowBtns("gasto","gastos",g.id)}</td></tr>`).join("")
   }</tbody></table>`:`<div class="empty">Aún no hay gastos. Anota la primera compra con el formulario.</div>`;
 }
 
@@ -389,10 +405,16 @@ function calcProd(){
 }
 ["pdCant","pdCosto","pdPrecio"].forEach(id=>$(id).addEventListener("input",calcProd));
 $("pdTipo").addEventListener("change",()=>{const t=byId("tipos",$("pdTipo").value);if(t&&t.precio)$("pdPrecio").value=t.precio;calcProd()});
+function resetProd(){$("pdId").value="";["pdCant","pdCosto","pdNota"].forEach(id=>$(id).value="");modoEditar("pd",false,"","Registrar producción");calcProd()}
+$("pdCancel").onclick=resetProd;
+EDIT.prod=id=>{const p=byId("produccion",id);if(!p)return;$("pdId").value=p.id;$("pdFecha").value=p.fecha||today();
+  if(!byId("tipos",p.tipoId))toast("El tipo de tostón de esta producción fue borrado: elige otro");$("pdTipo").value=byId("tipos",p.tipoId)?p.tipoId:"";
+  $("pdCant").value=p.cantidad||"";$("pdCosto").value=num(p.costo)>0?p.costo:"";$("pdPrecio").value=num(p.precio)>0?p.precio:"";$("pdNota").value=p.nota||"";calcProd();modoEditar("pd",true,"Editar producción del "+fdate(p.fecha).replace(/<[^>]*>/g,""))};
 $("fProd").addEventListener("submit",async e=>{
-  e.preventDefault();const d={fecha:$("pdFecha").value||today(),tipoId:$("pdTipo").value,cantidad:num($("pdCant").value),costo:num($("pdCosto").value),precio:num($("pdPrecio").value),nota:$("pdNota").value.trim(),creado:Date.now()};
+  e.preventDefault();const id=$("pdId").value;const prev=id?byId("produccion",id):null;if(id&&!prev){toast("Esa producción ya fue borrada");resetProd();return}
+  const d={fecha:$("pdFecha").value||today(),tipoId:$("pdTipo").value,cantidad:num($("pdCant").value),costo:num($("pdCosto").value),precio:num($("pdPrecio").value),nota:$("pdNota").value.trim(),creado:prev?.creado||Date.now()};
   if(!d.tipoId||d.cantidad<=0){toast("Elige el tipo de tostón y la cantidad");return}
-  if(await save("produccion",null,d)){toast("Producción guardada");["pdCant","pdCosto","pdNota"].forEach(id=>$(id).value="");calcProd()}
+  if(await save("produccion",id||null,d)){toast(id?"Producción actualizada":"Producción guardada");resetProd()}
 });
 function renderProduccion(){
   const T=sortN(S.tipos);fill($("pdTipo"),T,T.length?"Elige…":"Primero agrega un tipo abajo");
@@ -405,17 +427,18 @@ function renderProduccion(){
     L.map(p=>{const k=num(p.costo),pr=num(p.precio)||num(byId("tipos",p.tipoId)?.precio);const m=margenProd(num(p.cantidad),k,pr);
     return `<tr><td>${fdate(p.fecha)}</td><td>${esc(nomTipo(p.tipoId))}${p.nota?`<span class="s">${esc(p.nota)}</span>`:""}</td><td class="n">${qty(p.cantidad)}</td>
     <td class="n">${k>0?money(k):"—"}</td><td class="n">${k>0?money(m.cu):"—"}${k>0&&pr>0?`<span class="s">vende a ${money(pr)}</span>`:""}</td>
-    <td class="n">${k>0&&pr>0?margenPill(m.pct)+`<span class="s">gana ${money(m.gan)} c/u</span>`:"—"}</td><td class="n">${delBtn("produccion",p.id)}</td></tr>`}).join("")
+    <td class="n">${k>0&&pr>0?margenPill(m.pct)+`<span class="s">gana ${money(m.gan)} c/u</span>`:"—"}</td><td class="n">${rowBtns("prod","produccion",p.id)}</td></tr>`}).join("")
   }</tbody></table>`:`<div class="empty">Aún no hay producción registrada.</div>`;
 }
 
 /* ---------- VENTAS ---------- */
-function lineVenta(){
+function lineVenta(it){
   const d=document.createElement("div");d.className="line v";
   d.innerHTML=`<select aria-label="Tipo de tostón">${opts(sortN(S.tipos),"","Tipo…")}</select><input type="number" step="any" min="0" aria-label="Cantidad" placeholder="Cant."><input type="number" step="any" min="0" aria-label="Precio" placeholder="Precio"><button type="button" class="x" aria-label="Quitar">×</button>`;
   const [s,c,p]=d.querySelectorAll("select,input");
   s.addEventListener("change",()=>{const t=byId("tipos",s.value);if(t&&t.precio)p.value=t.precio;calcVenta()});
   d.addEventListener("input",calcVenta);d.querySelector(".x").onclick=()=>{d.remove();if(!$("veLines").children.length)lineVenta();calcVenta()};
+  if(it){if(!byId("tipos",it.tipoId))s.insertAdjacentHTML("beforeend",`<option value="${esc(it.tipoId)}">(tipo borrado)</option>`);s.value=it.tipoId;c.value=it.cantidad;p.value=it.precio}
   $("veLines").appendChild(d);
 }
 $("veAdd").onclick=()=>lineVenta();
@@ -427,12 +450,20 @@ function calcVenta(){
   const it=readItems();const t=it.reduce((a,x)=>a+x.cantidad*x.precio,0);const pg=pagadoAhora(t);
   $("veCalc").innerHTML=it.length?`<div class="t"><span>Total</span><span>${money(t)}</span></div><div><span>Pagó</span><span>${money(pg)}</span></div>${t-pg>0.004?`<div><span>Queda debiendo</span><b style="color:var(--warn)">${money(t-pg)}</b></div>`:""}`:`<div class="muted" style="display:block">Elige el tipo de tostón, la cantidad y el precio.</div>`;
 }
+function resetVenta(){$("veId").value="";$("veLines").innerHTML="";lineVenta();$("vePago").value="contado";$("vePagado").value="";$("vePagadoLbl").hidden=true;modoEditar("ve",false,"","Nueva venta");calcVenta()}
+$("veCancel").onclick=resetVenta;
+EDIT.venta=id=>{const v=byId("ventas",id);if(!v)return;const t=totalVenta(v),pg=num(v.pagado);
+  $("veId").value=v.id;$("veFecha").value=v.fecha||today();$("veCli").value=byId("clientes",v.clienteId)?v.clienteId:"";
+  $("veLines").innerHTML="";(v.items||[]).forEach(it=>lineVenta(it));if(!$("veLines").children.length)lineVenta();
+  const m=pg>=t-0.004?"contado":pg<=0.004?"credito":"parcial";$("vePago").value=m;$("vePagado").value=m==="parcial"?pg:"";$("vePagadoLbl").hidden=m!=="parcial";
+  calcVenta();modoEditar("ve",true,"Editar venta de "+nomCli(v.clienteId))};
 $("fVenta").addEventListener("submit",async e=>{
-  e.preventDefault();const items=readItems();if(!items.length){toast("Agrega al menos un tipo de tostón");return}
+  e.preventDefault();const id=$("veId").value;const prev=id?byId("ventas",id):null;if(id&&!prev){toast("Esa venta ya fue anulada");resetVenta();return}
+  const items=readItems();if(!items.length){toast("Agrega al menos un tipo de tostón");return}
   const t=items.reduce((a,x)=>a+x.cantidad*x.precio,0);const pg=pagadoAhora(t);const cli=$("veCli").value;
   if(t-pg>0.004&&!cli){toast("Para vender a crédito elige el cliente");return}
-  if(await save("ventas",null,{fecha:$("veFecha").value||today(),clienteId:cli,items,total:t,pagado:pg,creado:Date.now()})){
-    toast(t-pg>0.004?"Venta guardada. Queda debiendo "+money(t-pg):"Venta guardada");$("veLines").innerHTML="";lineVenta();$("vePago").value="contado";$("vePagado").value="";$("vePagadoLbl").hidden=true;calcVenta()}
+  if(await save("ventas",id||null,{fecha:$("veFecha").value||today(),clienteId:cli,items,total:t,pagado:pg,creado:prev?.creado||Date.now()})){
+    toast((id?"Venta actualizada":"Venta guardada")+(t-pg>0.004?". Queda debiendo "+money(t-pg):""));resetVenta()}
 });
 function renderVentas(){
   fill($("veCli"),sortN(S.clientes),"Cliente general (pagó todo)");
@@ -442,7 +473,7 @@ function renderVentas(){
   $("lVentas").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th class="n">Total</th><th></th></tr></thead><tbody>${
     L.map(v=>{const t=totalVenta(v),d=t-num(v.pagado);return `<tr><td>${fdate(v.fecha)}</td><td>${esc(nomCli(v.clienteId))}<span class="s">${d>0.004?`<span class="pill debe">Debía ${money(d)}</span>`:'<span class="pill pag">Pagada</span>'}</span></td>
     <td>${(v.items||[]).map(it=>`${qty(it.cantidad)} × ${esc(nomTipo(it.tipoId))} <span class="muted">a ${money(it.precio)}</span>`).join("<br>")}</td>
-    <td class="n">${money(t)}</td><td class="n">${delBtn("ventas",v.id,"Anular")}</td></tr>`}).join("")
+    <td class="n">${money(t)}</td><td class="n">${rowBtns("venta","ventas",v.id,"Anular")}</td></tr>`}).join("")
   }</tbody></table>`:`<div class="empty">Aún no hay ventas registradas.</div>`;
 }
 
@@ -462,6 +493,15 @@ document.addEventListener("click",async e=>{
     if(!c||m<=0){toast("Escribe cuánto pagó");return}
     if(await save("pagos",null,{clienteId:c.id,monto:m,fecha:today(),creado:Date.now()}))toast("Pago de "+money(m)+" registrado");}
 });
+let pagoEdit="";
+EDIT.pago=id=>{pagoEdit=id;renderClientes();const i=$("pe-"+id);if(i){i.focus();i.select()}};
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-pago-ok],[data-pago-no]");if(!b)return;
+  if(b.dataset.pagoNo!=null){pagoEdit="";renderClientes();return}
+  const p=byId("pagos",b.dataset.pagoOk);if(!p){pagoEdit="";renderClientes();return}
+  const m=num($("pe-"+p.id).value),f=$("pf-"+p.id).value||p.fecha;if(m<=0){toast("Escribe el monto");return}
+  if(await save("pagos",p.id,{clienteId:p.clienteId,monto:m,fecha:f,creado:p.creado||Date.now()})){pagoEdit="";toast("Pago actualizado");renderClientes()}
+});
 function renderClientes(){
   const C=sortN(S.clientes).map(c=>({c,d:deuda(c)})).sort((a,b)=>b.d-a.d);
   $("lCli").innerHTML=C.length?`<table><thead><tr><th>Cliente</th><th class="n">Debe</th><th class="n">Registrar pago</th><th></th></tr></thead><tbody>${
@@ -472,7 +512,10 @@ function renderClientes(){
   }</tbody></table>`:`<div class="empty">Agrega a tus clientes para llevar lo que te deben.</div>`;
   const P=sortF(S.pagos).slice(0,60);
   $("lPagos").innerHTML=P.length?`<table><thead><tr><th>Fecha</th><th>Cliente</th><th class="n">Monto</th><th></th></tr></thead><tbody>${
-    P.map(p=>`<tr><td>${fdate(p.fecha)}</td><td>${esc(nomCli(p.clienteId))}</td><td class="n">${money(p.monto)}</td><td class="n">${delBtn("pagos",p.id,"Anular")}</td></tr>`).join("")
+    P.map(p=>p.id===pagoEdit?`<tr><td><input id="pf-${esc(p.id)}" type="date" value="${esc(p.fecha||"")}" aria-label="Fecha del pago"></td><td>${esc(nomCli(p.clienteId))}</td>
+      <td class="n"><input id="pe-${esc(p.id)}" type="number" step="any" min="0" value="${num(p.monto)}" aria-label="Monto del pago" style="max-width:110px"></td>
+      <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm" data-pago-ok="${esc(p.id)}">Guardar</button><button class="btn sm ghost" data-pago-no="">Cancelar</button></span></td></tr>`
+    :`<tr><td>${fdate(p.fecha)}</td><td>${esc(nomCli(p.clienteId))}</td><td class="n">${money(p.monto)}</td><td class="n">${rowBtns("pago","pagos",p.id,"Anular")}</td></tr>`).join("")
   }</tbody></table>`:`<div class="empty">Aquí aparecen los pagos de deudas que registres.</div>`;
 }
 
