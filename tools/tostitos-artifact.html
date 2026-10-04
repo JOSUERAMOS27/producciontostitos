@@ -1,0 +1,774 @@
+<title>Tostitos Producción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">
+<style>
+/* Layout: barra superior con marca + pestañas; cada pestaña = formulario a la izquierda, lista a la derecha (se apilan en teléfono) */
+:root{
+  --bg:#f6f7f1; --surface:#ffffff; --sunk:#eef0e6; --line:#dfe2d3;
+  --fg:#1f2418; --muted:#646b57;
+  --leaf:#2f5d2a; --leaf-ink:#ffffff; --gold:#e3a51c; --gold-soft:#fbefcf;
+  --good:#2f7d3a; --warn:#b26a00; --bad:#b3261e; --warn-bg:#fff3dc; --bad-bg:#fde8e6;
+  --display:"Bricolage Grotesque", "Archivo", system-ui, sans-serif;
+  --body:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141711; --surface:#1c2017; --sunk:#23281d; --line:#323829;
+  --fg:#e9ecdf; --muted:#a3aa94;
+  --leaf:#86c06f; --leaf-ink:#10170d; --gold:#f0b93a; --gold-soft:#3a2f12;
+  --good:#7fcf86; --warn:#f0b04a; --bad:#ff8a80; --warn-bg:#33270f; --bad-bg:#3a1916;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141711; --surface:#1c2017; --sunk:#23281d; --line:#323829;
+  --fg:#e9ecdf; --muted:#a3aa94;
+  --leaf:#86c06f; --leaf-ink:#10170d; --gold:#f0b93a; --gold-soft:#3a2f12;
+  --good:#7fcf86; --warn:#f0b04a; --bad:#ff8a80; --warn-bg:#33270f; --bad-bg:#3a1916;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;padding-block:14px 8px;flex-wrap:wrap}
+.logo{width:38px;height:38px;flex:none}
+.brand h1{font-family:var(--display);font-weight:800;font-size:26px;margin:0;letter-spacing:-.01em}
+.brand .sub{color:var(--muted);font-size:13px}
+.brand .sp{flex:1}
+.mon{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.mon input{width:60px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:0;scrollbar-width:none}
+nav.tabs button{border:0;background:none;color:var(--muted);font:600 14px var(--body);padding:10px 12px;border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--gold)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+section.tab{padding-top:20px}
+h2{font-family:var(--display);font-size:22px;margin:0 0 4px;text-wrap:balance}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+.lead{color:var(--muted);margin:0 0 16px;max-width:70ch}
+.cols{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+form{display:grid;gap:10px}
+label{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,select,textarea{font:15px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:8px;padding:9px 14px;font:700 14px var(--body);cursor:pointer;background:var(--leaf);color:var(--leaf-ink)}
+.btn.ghost{background:var(--sunk);color:var(--fg)}
+.btn.sm{padding:5px 9px;font-size:13px;font-weight:600}
+.btn.danger{background:var(--bad-bg);color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tablebox{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap}
+td .s{display:block;color:var(--muted);font-size:12.5px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--sunk);color:var(--muted);vertical-align:middle}
+.pill.ok{background:transparent;color:var(--good);border:1px solid currentColor}
+.pill.low{background:var(--warn-bg);color:var(--warn)}
+.pill.neg{background:var(--bad-bg);color:var(--bad)}
+.pill.ex{background:var(--gold-soft);color:var(--warn)}
+.empty{color:var(--muted);padding:18px 8px;text-align:center}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.kpi .l{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .h{font-size:12.5px;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 20px;font-size:13.5px}
+.flow span.st{background:var(--surface);border:1px solid var(--line);padding:6px 10px;border-radius:99px;font-weight:600}
+.flow span.ar{color:var(--muted)}
+.note{font-size:13px;border-radius:8px;padding:10px 12px;background:var(--sunk);color:var(--fg)}
+.note.warn{background:var(--warn-bg);color:var(--warn)}
+.note.bad{background:var(--bad-bg);color:var(--bad)}
+.calc{background:var(--sunk);border-radius:8px;padding:10px 12px;font-size:13.5px;display:grid;gap:3px;font-variant-numeric:tabular-nums}
+.calc div{display:flex;justify-content:space-between;gap:10px}
+.calc div>span:last-child,.calc div>b{white-space:nowrap;text-align:right}
+.calc .t{font-weight:800;border-top:1px solid var(--line);padding-top:4px;margin-top:2px}
+.lines{display:grid;gap:6px}
+.line{display:grid;grid-template-columns:minmax(0,1fr) 92px 34px;gap:6px;align-items:center}
+.line.v{grid-template-columns:minmax(0,1fr) 70px 84px 34px}
+.line.r{grid-template-columns:minmax(0,1fr) 80px 46px 34px}
+.line.p{grid-template-columns:minmax(0,1fr) 90px 52px 34px}
+.line .u{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{border:0;background:var(--sunk);color:var(--muted);border-radius:8px;height:36px;cursor:pointer;font-size:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.banner{margin-top:14px}
+.muted{color:var(--muted)}
+.price{font-weight:800;color:var(--leaf)}
+@media (prefers-reduced-motion:no-preference){.toast{transition:opacity .2s}}
+</style>
+
+<header class="top">
+  <div class="wrap" style="padding-block:0">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="var(--gold)"/><circle cx="20" cy="20" r="11" fill="none" stroke="var(--leaf)" stroke-width="2.5" stroke-dasharray="3 3"/><circle cx="20" cy="20" r="4" fill="var(--leaf)"/></svg>
+      <div>
+        <h1>Tostitos</h1>
+        <div class="sub">Producción, costos y ventas de tostones</div>
+      </div>
+      <div class="sp"></div>
+      <label class="mon" for="moneda">Moneda <input id="moneda" maxlength="4" value="$"></label>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-t="resumen" aria-selected="true">Resumen</button>
+      <button role="tab" data-t="insumos">Materias primas</button>
+      <button role="tab" data-t="productos">Productos y recetas</button>
+      <button role="tab" data-t="produccion">Producción</button>
+      <button role="tab" data-t="ventas">Ventas</button>
+      <button role="tab" data-t="proveedores">Proveedores</button>
+      <button role="tab" data-t="clientes">Clientes</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- RESUMEN -->
+  <section class="tab" id="t-resumen">
+    <div class="flow" aria-label="Cómo funciona">
+      <span class="st">1. Compras materia prima</span><span class="ar">→</span>
+      <span class="st">2. Defines la receta</span><span class="ar">→</span>
+      <span class="st">3. Produces un lote</span><span class="ar">→</span>
+      <span class="st">4. Sale el costo por bolsa</span><span class="ar">→</span>
+      <span class="st">5. Vendes con ganancia</span>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="card"><h3>Para revisar</h3><div id="alertas"></div></div>
+      <div class="card"><h3>Productos terminados</h3><div class="tablebox" id="resProd"></div></div>
+    </div>
+    <div class="card" style="margin-top:20px"><h3>Últimos movimientos</h3><div class="tablebox" id="movs"></div></div>
+    <div class="card" id="xlBox" style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between" hidden>
+      <span><b>Tus datos en Excel.</b> <span class="muted">Descarga materias primas, compras, recetas, producción, ventas, proveedores y clientes en un solo archivo.</span></span>
+      <button class="btn" id="xlBtn" type="button">Descargar en Excel</button>
+    </div>
+    <div id="exBox" style="margin-top:20px" hidden>
+      <div class="note warn" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+        <span>Hay datos de <b>ejemplo</b> cargados para que veas cómo funciona. Cuando quieras empezar con tus datos reales, bórralos.</span>
+        <span class="btns"><button class="btn sm danger" id="delEx">Borrar datos de ejemplo</button></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSUMOS -->
+  <section class="tab" id="t-insumos" hidden>
+    <h2>Materias primas</h2>
+    <p class="lead">Todo lo que entra en tus tostones: plátano, aceite, sal, bolsas, etiquetas. Cada compra suma al inventario y actualiza el costo.</p>
+    <div class="cols">
+      <div style="display:grid;gap:20px">
+        <div class="card">
+          <h3 id="insTitle">Nueva materia prima</h3>
+          <form id="fIns">
+            <input type="hidden" id="insId">
+            <label for="insNombre">Nombre<input id="insNombre" required placeholder="Plátano verde"></label>
+            <div class="row2">
+              <label for="insUnidad">Unidad para recetas e inventario<select id="insUnidad"></select></label>
+              <label for="insCosto">Costo por esa unidad<input id="insCosto" type="number" step="any" min="0" required placeholder="0.25"></label>
+            </div>
+            <div class="row2">
+              <label for="insStock">Cantidad que ya tienes<input id="insStock" type="number" step="any" placeholder="0"></label>
+              <label for="insMin">Avisarme si baja de<input id="insMin" type="number" step="any" min="0" placeholder="0"></label>
+            </div>
+            <label for="insProv">Proveedor habitual<select id="insProv"></select></label>
+            <div>
+              <h3 style="margin:6px 0 4px">Otras formas de comprarlo</h3>
+              <p class="muted" style="margin:0 0 6px;font-size:13px" id="insPresHelp"></p>
+              <div class="lines" id="insPres"></div>
+              <button class="btn ghost sm" type="button" id="insPresAdd" style="margin-top:6px">+ Agregar forma de compra</button>
+            </div>
+            <div class="btns"><button class="btn" type="submit">Guardar</button><button class="btn ghost" type="button" id="insCancel" hidden>Cancelar</button></div>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Registrar compra</h3>
+          <form id="fCompra">
+            <label for="coIns">Materia prima<select id="coIns" required></select></label>
+            <div class="row2">
+              <label for="coCant">Cantidad<input id="coCant" type="number" step="any" min="0" required></label>
+              <label for="coPres">Comprado por<select id="coPres"></select></label>
+            </div>
+            <label for="coTotal">Total pagado<input id="coTotal" type="number" step="any" min="0" required></label>
+            <div class="row2">
+              <label for="coProv">Proveedor<select id="coProv"></select></label>
+              <label for="coFecha">Fecha<input id="coFecha" type="date" required></label>
+            </div>
+            <div class="calc" id="coCalc"></div>
+            <div class="btns"><button class="btn" type="submit">Registrar compra</button></div>
+          </form>
+        </div>
+      </div>
+      <div style="display:grid;gap:20px;min-width:0">
+        <div class="card"><h3>Inventario de materias primas</h3><div class="tablebox" id="lInsumos"></div></div>
+        <div class="card"><h3>Compras</h3><div class="tablebox" id="lCompras"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTOS -->
+  <section class="tab" id="t-productos" hidden>
+    <h2>Productos y recetas</h2>
+    <p class="lead">La receta dice cuánto de cada materia prima usa un lote y cuántas unidades salen. Con eso se calcula el costo por unidad y el precio de venta.</p>
+    <div class="cols">
+      <div class="card">
+        <h3 id="prTitle">Nuevo producto</h3>
+        <form id="fProd">
+          <input type="hidden" id="prId">
+          <label for="prNombre">Nombre del producto<input id="prNombre" required placeholder="Tostones clásicos 150 g"></label>
+          <div class="row2">
+            <label for="prRinde">Unidades que salen por lote<input id="prRinde" type="number" step="any" min="0.0001" required placeholder="60"></label>
+            <label for="prUnidad">Se vende por<input id="prUnidad" placeholder="bolsa" value="bolsa"></label>
+          </div>
+          <div>
+            <h3 style="margin:6px 0 6px">Materias primas por lote</h3>
+            <div class="lines" id="prLines"></div>
+            <button class="btn ghost sm" type="button" id="prAdd" style="margin-top:6px">+ Agregar materia prima</button>
+          </div>
+          <label for="prOtros">Otros costos por lote (mano de obra, gas, luz)<input id="prOtros" type="number" step="any" min="0" placeholder="0"></label>
+          <div class="row2">
+            <label for="prMargen">% de ganancia sobre el costo<input id="prMargen" type="number" step="any" min="0" placeholder="40"></label>
+            <label for="prPrecio">Precio de venta (opcional)<input id="prPrecio" type="number" step="any" min="0" placeholder="Usar sugerido"></label>
+          </div>
+          <div class="calc" id="prCalc"></div>
+          <div class="btns"><button class="btn" type="submit">Guardar producto</button><button class="btn ghost" type="button" id="prCancel" hidden>Cancelar</button></div>
+        </form>
+      </div>
+      <div class="card" style="min-width:0"><h3>Productos</h3><div class="tablebox" id="lProductos"></div></div>
+    </div>
+  </section>
+
+  <!-- PRODUCCION -->
+  <section class="tab" id="t-produccion" hidden>
+    <h2>Producción</h2>
+    <p class="lead">Cuando fríes un lote, regístralo aquí. Se descuentan las materias primas del inventario y suben las bolsas listas para vender, con su costo real de ese día.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Registrar producción</h3>
+        <form id="fProduccion">
+          <label for="pdProd">Producto<select id="pdProd" required></select></label>
+          <div class="row2">
+            <label for="pdLotes">Cantidad de lotes<input id="pdLotes" type="number" step="any" min="0.01" value="1" required></label>
+            <label for="pdFecha">Fecha<input id="pdFecha" type="date" required></label>
+          </div>
+          <label for="pdReal">Unidades que salieron de verdad (opcional)<input id="pdReal" type="number" step="any" min="0" placeholder="Según receta"></label>
+          <div class="calc" id="pdCalc"></div>
+          <div id="pdWarn"></div>
+          <div class="btns"><button class="btn" type="submit">Registrar producción</button></div>
+        </form>
+      </div>
+      <div class="card" style="min-width:0"><h3>Historial de producción</h3><div class="tablebox" id="lProducciones"></div></div>
+    </div>
+  </section>
+
+  <!-- VENTAS -->
+  <section class="tab" id="t-ventas" hidden>
+    <h2>Ventas</h2>
+    <p class="lead">Cada venta descuenta producto terminado y muestra cuánto ganaste en ella.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Nueva venta</h3>
+        <form id="fVenta">
+          <div class="row2">
+            <label for="veCli">Cliente<select id="veCli"></select></label>
+            <label for="veFecha">Fecha<input id="veFecha" type="date" required></label>
+          </div>
+          <div>
+            <h3 style="margin:6px 0 6px">Productos</h3>
+            <div class="lines" id="veLines"></div>
+            <button class="btn ghost sm" type="button" id="veAdd" style="margin-top:6px">+ Agregar producto</button>
+          </div>
+          <label for="vePago">Pago<select id="vePago"><option>Contado</option><option>Crédito</option><option>Transferencia</option></select></label>
+          <div class="calc" id="veCalc"></div>
+          <div id="veWarn"></div>
+          <div class="btns"><button class="btn" type="submit">Registrar venta</button></div>
+        </form>
+      </div>
+      <div class="card" style="min-width:0"><h3>Ventas registradas</h3><div class="tablebox" id="lVentas"></div></div>
+    </div>
+  </section>
+
+  <!-- PROVEEDORES -->
+  <section class="tab" id="t-proveedores" hidden>
+    <h2>Proveedores</h2>
+    <p class="lead">A quién le compras la materia prima.</p>
+    <div class="cols">
+      <div class="card">
+        <h3 id="pvTitle">Nuevo proveedor</h3>
+        <form id="fProv">
+          <input type="hidden" id="pvId">
+          <label for="pvNombre">Nombre<input id="pvNombre" required></label>
+          <label for="pvTel">Teléfono<input id="pvTel"></label>
+          <label for="pvNotas">Qué te vende / notas<input id="pvNotas"></label>
+          <div class="btns"><button class="btn" type="submit">Guardar</button><button class="btn ghost" type="button" id="pvCancel" hidden>Cancelar</button></div>
+        </form>
+      </div>
+      <div class="card" style="min-width:0"><h3>Lista de proveedores</h3><div class="tablebox" id="lProv"></div></div>
+    </div>
+  </section>
+
+  <!-- CLIENTES -->
+  <section class="tab" id="t-clientes" hidden>
+    <h2>Clientes</h2>
+    <p class="lead">Colmados, supermercados, distribuidores o personas que te compran.</p>
+    <div class="cols">
+      <div class="card">
+        <h3 id="clTitle">Nuevo cliente</h3>
+        <form id="fCli">
+          <input type="hidden" id="clId">
+          <label for="clNombre">Nombre<input id="clNombre" required></label>
+          <div class="row2">
+            <label for="clTel">Teléfono<input id="clTel"></label>
+            <label for="clTipo">Tipo<select id="clTipo"><option>Tienda</option><option>Supermercado</option><option>Distribuidor</option><option>Persona</option><option>Otro</option></select></label>
+          </div>
+          <label for="clDir">Dirección / notas<input id="clDir"></label>
+          <div class="btns"><button class="btn" type="submit">Guardar</button><button class="btn ghost" type="button" id="clCancel" hidden>Cancelar</button></div>
+        </form>
+      </div>
+      <div class="card" style="min-width:0"><h3>Lista de clientes</h3><div class="tablebox" id="lCli"></div></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const COLS=["insumos","proveedores","clientes","productos","compras","producciones","ventas","ajustes"];
+const UNIDADES=["kg","g","lb","litro","ml","galón","unidad"];
+/* Conversión automática dentro de cada familia (peso en g, volumen en ml, conteo en unidades) */
+const FAM={kg:["peso",1000],g:["peso",1],lb:["peso",453.592],"quintal":["peso",45359.2],litro:["vol",1000],ml:["vol",1],"galón":["vol",3785.41],unidad:["cont",1],docena:["cont",12],ciento:["cont",100],millar:["cont",1000]};
+const AUTO={peso:["kg","g","lb","quintal"],vol:["litro","ml","galón"],cont:["unidad","docena","ciento","millar"]};
+/* Formas de compra de una materia prima: [{nombre, factor}] donde factor = unidades base por 1 de esa forma */
+function formas(i){
+  const u=i.unidad||"unidad";const f=FAM[u];const out=[{nombre:u,factor:1}];
+  if(f)AUTO[f[0]].forEach(n=>{if(n!==u)out.push({nombre:n,factor:FAM[n][1]/f[1]})});
+  (i.presentaciones||[]).forEach(p=>{if(p.nombre&&num(p.equivale)>0)out.push({nombre:p.nombre,factor:num(p.equivale),propia:true})});
+  return out;
+}
+const fmtForma=(f,u)=>f.factor===1?f.nombre:`${f.nombre} (${qty(f.factor)} ${u})`;
+const S={}; COLS.forEach(c=>S[c]=[]);
+let db=null, ready=false;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+let MON="$";
+const money=n=>MON+"\u00a0"+(Math.round((n||0)*100)/100).toLocaleString("es",{minimumFractionDigits:2,maximumFractionDigits:2});
+const qty=n=>(Math.round((n||0)*1000)/1000).toLocaleString("es",{maximumFractionDigits:3});
+const pct=n=>(Math.round((n||0)*10)/10).toLocaleString("es",{maximumFractionDigits:1})+"%";
+const fdate=s=>{if(!s)return"";const [y,m,d]=s.split("-");return d+"/"+m+"/"+y};
+const byId=(c,id)=>S[c].find(x=>x.id===id);
+const exPill=x=>x&&x.ejemplo?' <span class="pill ex">Ejemplo</span>':'';
+
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- cálculos ---------- */
+function stockIns(i){
+  let s=num(i.stockInicial);
+  S.compras.forEach(c=>{if(c.insumoId===i.id)s+=num(c.cantidad)});
+  S.producciones.forEach(p=>(p.consumos||[]).forEach(k=>{if(k.insumoId===i.id)s-=num(k.cantidad)}));
+  return s;
+}
+function costoLote(p){
+  let mat=0;(p.receta||[]).forEach(r=>{const i=byId("insumos",r.insumoId);if(i)mat+=num(r.cantidad)*num(i.costo)});
+  return {mat,otros:num(p.otrosCostos),total:mat+num(p.otrosCostos)};
+}
+function costoUnit(p){const r=num(p.rinde);return r>0?costoLote(p).total/r:0}
+function precioSug(p){return costoUnit(p)*(1+num(p.margen)/100)}
+function precio(p){return num(p.precio)>0?num(p.precio):precioSug(p)}
+function stockProd(p){
+  let s=0;S.producciones.forEach(x=>{if(x.productoId===p.id)s+=num(x.unidades)});
+  S.ventas.forEach(v=>(v.items||[]).forEach(it=>{if(it.productoId===p.id)s-=num(it.cantidad)}));
+  return s;
+}
+function costoProm(p){ // costo promedio real según producciones
+  let u=0,c=0;S.producciones.forEach(x=>{if(x.productoId===p.id){u+=num(x.unidades);c+=num(x.costoTotal)}});
+  return u>0?c/u:costoUnit(p);
+}
+function stockPill(s,min){
+  if(s<0)return '<span class="pill neg">Negativo</span>';
+  if(min>0&&s<=min)return '<span class="pill low">Bajo</span>';
+  if(s===0)return '<span class="pill">Sin stock</span>';
+  return '<span class="pill ok">OK</span>';
+}
+
+/* ---------- db ---------- */
+async function save(col,id,data){
+  if(!db){toast("No se puede guardar en esta vista");return false}
+  try{ if(id) await db.collection(col).doc(id).set(data); else await db.collection(col).add(data); return true }
+  catch(e){ toast(e&&e.code==="quota_exceeded"?"Se llenó el espacio de datos. Borra registros viejos.":"No se pudo guardar. Intenta de nuevo."); return false }
+}
+async function del(col,id){
+  if(!db)return;
+  try{await db.collection(col).doc(id).delete();toast("Borrado")}catch(e){toast("No se pudo borrar")}
+}
+async function start(){
+  let c=null;
+  try{c=await window.claude?.use?.("db")}catch(e){c=null}
+  if(!c){
+    const b=$("banner");b.hidden=false;b.innerHTML='<div class="note bad">No se pueden cargar ni guardar datos en esta vista. Abre el sistema desde tu cuenta de Claude para usarlo.</div>';
+    ready=true;renderAll();return;
+  }
+  db=c;
+  COLS.forEach(col=>{
+    db.collection(col).onSnapshot(snap=>{
+      S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+      if(col==="ajustes"){const a=S.ajustes.find(x=>x.id==="general");MON=(a&&a.moneda)||"$";if(document.activeElement!==$("moneda"))$("moneda").value=MON}
+      ready=true;scheduleRender();
+    },e=>{const b=$("banner");b.hidden=false;b.innerHTML='<div class="note bad">Se perdió la conexión con los datos. Recarga la página.</div>'});
+  });
+}
+let rq=0;function scheduleRender(){cancelAnimationFrame(rq);rq=requestAnimationFrame(renderAll)}
+
+/* ---------- pestañas ---------- */
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(!b)return;showTab(b.dataset.t)});
+function showTab(t){
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t?"true":"false"));
+  document.querySelectorAll("section.tab").forEach(s=>s.hidden=s.id!=="t-"+t);
+  try{localStorage.setItem("tost_tab",t)}catch(e){}
+}
+try{const t=localStorage.getItem("tost_tab");if(t&&$("t-"+t))showTab(t)}catch(e){}
+
+/* ---------- selects ---------- */
+function opts(list,sel,empty){return (empty!=null?`<option value="">${esc(empty)}</option>`:"")+list.map(x=>`<option value="${esc(x.id)}"${x.id===sel?" selected":""}>${esc(x.nombre)}</option>`).join("")}
+function fillSelect(el,list,empty){const v=el.value;el.innerHTML=opts(list,v,empty);if(v&&list.some(x=>x.id===v))el.value=v}
+const sortN=a=>[...a].sort((x,y)=>String(x.nombre).localeCompare(String(y.nombre),"es"));
+const sortF=a=>[...a].sort((x,y)=>String(y.fecha||"").localeCompare(String(x.fecha||""))||num(y.creado)-num(x.creado));
+
+/* ---------- confirmación en línea ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-del]");if(!b)return;
+  if(b.dataset.armed){del(b.dataset.col,b.dataset.del);return}
+  b.dataset.armed="1";const old=b.textContent;b.textContent="¿Seguro?";
+  setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=old}},3000);
+});
+const delBtn=(col,id,label)=>`<button class="btn sm danger" data-col="${col}" data-del="${esc(id)}">${label||"Borrar"}</button>`;
+
+/* ---------- moneda ---------- */
+$("moneda").addEventListener("change",async e=>{
+  const v=e.target.value.trim()||"$";MON=v;renderAll();
+  if(db)try{await db.collection("ajustes").doc("general").set({moneda:v})}catch(_){}
+});
+
+/* ---------- INSUMOS ---------- */
+$("insUnidad").innerHTML=UNIDADES.map(u=>`<option>${u}</option>`).join("");
+$("fIns").addEventListener("submit",async e=>{
+  e.preventDefault();const id=$("insId").value;const prev=id?byId("insumos",id):null;
+  const presentaciones=[...$("insPres").children].map(l=>({nombre:l.querySelector("input").value.trim(),equivale:num(l.querySelectorAll("input")[1].value)})).filter(p=>p.nombre&&p.equivale>0);
+  const d={nombre:$("insNombre").value.trim(),unidad:$("insUnidad").value,costo:num($("insCosto").value),presentaciones,
+    stockInicial:num($("insStock").value),minimo:num($("insMin").value),proveedorId:$("insProv").value||"",
+    creado:prev?.creado||Date.now()};
+  if(prev?.ejemplo)d.ejemplo=true;
+  if(!d.nombre)return;
+  if(await save("insumos",id||null,d)){toast(id?"Materia prima actualizada":"Materia prima agregada");resetIns()}
+});
+function linePres(nombre,eq){
+  const d=document.createElement("div");d.className="line p";
+  d.innerHTML=`<input aria-label="Nombre de la forma de compra" placeholder="cesta, saco, caja…" value="${esc(nombre??"")}"><input type="number" step="any" min="0" aria-label="Equivale a" placeholder="Equivale" value="${eq??""}"><span class="u"></span><button type="button" class="x" aria-label="Quitar">×</button>`;
+  d.querySelector(".x").onclick=()=>d.remove();$("insPres").appendChild(d);presUnits();
+}
+function presUnits(){const u=$("insUnidad").value;[...$("insPres").querySelectorAll(".u")].forEach(x=>x.textContent=u);
+  const f=FAM[u];const auto=f?AUTO[f[0]].filter(n=>n!==u):[];
+  $("insPresHelp").textContent=(auto.length?"Ya se convierte solo a: "+auto.join(", ")+". ":"")+"Agrega otras, por ejemplo una cesta de plátano y cuántos "+u+" trae.";}
+$("insPresAdd").onclick=()=>linePres();
+$("insUnidad").addEventListener("change",presUnits);
+function resetIns(){$("insPres").innerHTML="";$("insId").value="";$("insTitle").textContent="Nueva materia prima";$("insCancel").hidden=true;presUnits()}
+$("insCancel").onclick=resetIns;
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-edit-ins]");if(!b)return;const i=byId("insumos",b.dataset.editIns);if(!i)return;
+  $("insId").value=i.id;$("insNombre").value=i.nombre||"";$("insUnidad").value=i.unidad||"unidad";$("insCosto").value=i.costo??"";
+  $("insStock").value=i.stockInicial||"";$("insMin").value=i.minimo||"";$("insProv").value=i.proveedorId||"";
+  $("insPres").innerHTML="";(i.presentaciones||[]).forEach(p=>linePres(p.nombre,p.equivale));presUnits();
+  $("insTitle").textContent="Editar "+i.nombre;$("insCancel").hidden=false;$("insNombre").focus();
+});
+function renderInsumos(){
+  fillSelect($("insProv"),sortN(S.proveedores),"Ninguno");
+  fillSelect($("coIns"),sortN(S.insumos),"Elige…");
+  fillSelect($("coProv"),sortN(S.proveedores),"Ninguno");
+  const L=sortN(S.insumos);
+  $("lInsumos").innerHTML=L.length?`<table><thead><tr><th>Materia prima</th><th class="n">Costo</th><th class="n">En inventario</th><th class="n">Valor</th><th></th></tr></thead><tbody>${
+    L.map(i=>{const s=stockIns(i);const p=byId("proveedores",i.proveedorId);
+      const fp=formas(i).filter(f=>f.propia);
+      return `<tr><td><b>${esc(i.nombre)}</b>${exPill(i)}<span class="s">${p?esc(p.nombre):"Sin proveedor"}${fp.length?" · Se compra por "+fp.map(f=>esc(fmtForma(f,i.unidad))).join(", "):""}</span></td>
+      <td class="n">${money(i.costo)}<span class="s">por ${esc(i.unidad)}</span></td>
+      <td class="n">${qty(s)} ${esc(i.unidad)} ${stockPill(s,num(i.minimo))}</td>
+      <td class="n">${money(Math.max(s,0)*num(i.costo))}</td>
+      <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-ins="${esc(i.id)}">Editar</button>${delBtn("insumos",i.id)}</span></td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Aún no hay materias primas. Agrega la primera con el formulario (por ejemplo: plátano verde).</div>`;
+  const C=sortF(S.compras).slice(0,50);
+  $("lCompras").innerHTML=C.length?`<table><thead><tr><th>Fecha</th><th>Materia prima</th><th class="n">Cantidad</th><th class="n">Total</th><th></th></tr></thead><tbody>${
+    C.map(c=>{const i=byId("insumos",c.insumoId);const p=byId("proveedores",c.proveedorId);
+      return `<tr><td>${fdate(c.fecha)}</td><td>${i?esc(i.nombre):"(borrada)"}${exPill(c)}<span class="s">${p?esc(p.nombre):""}</span></td>
+      <td class="n">${c.presentacion&&c.presentacion!==(i&&i.unidad)?`${qty(c.cantidadCompra)} ${esc(c.presentacion)}<span class="s">= ${qty(c.cantidad)} ${i?esc(i.unidad):""}</span>`:`${qty(c.cantidad)} ${i?esc(i.unidad):""}`}<span class="s">${money(num(c.total)/Math.max(num(c.cantidad),1e-9))} por ${i?esc(i.unidad):"unidad"}</span></td><td class="n">${money(c.total)}</td>
+      <td class="n">${delBtn("compras",c.id,"Anular")}</td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Cuando compres materia prima, regístrala aquí y el inventario sube solo.</div>`;
+  fillPres();calcCompra();
+}
+function fillPres(){
+  const i=byId("insumos",$("coIns").value);const el=$("coPres");const v=el.value;
+  const F=i?formas(i):[];el.innerHTML=F.map((f,k)=>`<option value="${k}">${esc(fmtForma(f,i.unidad))}</option>`).join("")||'<option value="">—</option>';
+  const k=F.findIndex(f=>f.nombre===(el.dataset.n||""));el.value=k>=0?String(k):(F.length?"0":"");
+}
+$("coPres").addEventListener("change",()=>{const i=byId("insumos",$("coIns").value);const f=i&&formas(i)[num($("coPres").value)];$("coPres").dataset.n=f?f.nombre:"";calcCompra()});
+function compraBase(){
+  const i=byId("insumos",$("coIns").value);if(!i)return null;const F=formas(i);const f=F[num($("coPres").value)]||F[0];
+  const cc=num($("coCant").value);return {i,f,cc,base:cc*f.factor,t:num($("coTotal").value)};
+}
+function calcCompra(){
+  const x=compraBase();const i=x&&x.i,c=x?x.base:0,t=x?x.t:0;
+  $("coCalc").innerHTML=i&&c>0?`${x.f.factor!==1?`<div><span>${qty(x.cc)} ${esc(x.f.nombre)} equivalen a</span><b>${qty(c)} ${esc(i.unidad)}</b></div>`:""}${x.f.factor!==1&&t>0?`<div class="muted"><span>Costo por ${esc(x.f.nombre)}</span><span>${money(t/x.cc)}</span></div>`:""}<div><span>Costo por ${esc(i.unidad)}</span><b>${money(t/c)}</b></div><div class="muted"><span>Costo anterior</span><span>${money(i.costo)}</span></div><div class="muted" style="display:block">El costo de la materia prima se actualiza al nuevo precio.</div>`:`<div class="muted" style="display:block">Escribe cantidad y total pagado.</div>`;
+}
+["coIns","coCant","coTotal"].forEach(id=>$(id).addEventListener("input",calcCompra));
+$("coIns").addEventListener("change",()=>{const i=byId("insumos",$("coIns").value);if(i&&i.proveedorId)$("coProv").value=i.proveedorId;$("coPres").dataset.n="";fillPres();calcCompra()});
+$("fCompra").addEventListener("submit",async e=>{
+  e.preventDefault();const x=compraBase();const i=x&&x.i,c=x?x.base:0,t=x?x.t:0;
+  if(!i||c<=0){toast("Elige la materia prima y la cantidad");return}
+  const ok=await save("compras",null,{insumoId:i.id,cantidad:c,cantidadCompra:x.cc,presentacion:x.f.nombre,total:t,proveedorId:$("coProv").value||"",fecha:$("coFecha").value||today(),creado:Date.now()});
+  if(ok){ if(t>0){try{await db.collection("insumos").doc(i.id).update({costo:t/c})}catch(_){}}
+    toast("Compra registrada");$("coCant").value="";$("coTotal").value="";calcCompra()}
+});
+
+/* ---------- PRODUCTOS ---------- */
+function lineIns(sel,cant){
+  const d=document.createElement("div");d.className="line r";
+  d.innerHTML=`<select aria-label="Materia prima">${opts(sortN(S.insumos),sel,"Elige…")}</select><input type="number" step="any" min="0" aria-label="Cantidad" placeholder="Cant." value="${cant??""}"><span class="u"></span><button type="button" class="x" aria-label="Quitar">×</button>`;
+  const uu=()=>{const i=byId("insumos",d.querySelector("select").value);d.querySelector(".u").textContent=i?i.unidad:""};uu();
+  d.querySelector(".x").onclick=()=>{d.remove();calcProd()};
+  d.addEventListener("input",calcProd);d.addEventListener("change",()=>{uu();calcProd()});
+  $("prLines").appendChild(d);
+}
+$("prAdd").onclick=()=>lineIns();
+function readProd(){
+  const receta=[...$("prLines").children].map(l=>({insumoId:l.querySelector("select").value,cantidad:num(l.querySelector("input").value)})).filter(r=>r.insumoId&&r.cantidad>0);
+  return {nombre:$("prNombre").value.trim(),rinde:num($("prRinde").value),unidad:$("prUnidad").value.trim()||"unidad",receta,
+    otrosCostos:num($("prOtros").value),margen:num($("prMargen").value),precio:num($("prPrecio").value)};
+}
+function calcProd(){
+  const p=readProd();const cl=costoLote(p);const cu=costoUnit(p);const ps=precioSug(p);const pr=precio(p);
+  const lines=p.receta.map(r=>{const i=byId("insumos",r.insumoId);return i?`<div class="muted"><span>${esc(i.nombre)} · ${qty(r.cantidad)} ${esc(i.unidad)} × ${money(i.costo)}</span><span>${money(r.cantidad*num(i.costo))}</span></div>`:""}).join("");
+  $("prCalc").innerHTML=`${lines}<div><span>Materias primas por lote</span><span>${money(cl.mat)}</span></div>
+  <div><span>Otros costos por lote</span><span>${money(cl.otros)}</span></div>
+  <div class="t"><span>Costo total del lote</span><span>${money(cl.total)}</span></div>
+  <div class="t"><span>Costo por ${esc(p.unidad)}</span><span>${p.rinde>0?money(cu):"—"}</span></div>
+  <div><span>Precio sugerido (${qty(p.margen)}% ganancia)</span><span>${p.rinde>0?money(ps):"—"}</span></div>
+  ${p.rinde>0?`<div><span>Ganancia por ${esc(p.unidad)} a ${money(pr)}</span><b>${money(pr-cu)}${pr>0?` (${pct((pr-cu)/pr*100)} del precio)`:""}</b></div>`:""}`;
+}
+["prRinde","prOtros","prMargen","prPrecio","prUnidad"].forEach(id=>$(id).addEventListener("input",calcProd));
+function resetProd(){$("fProd").reset();$("prId").value="";$("prLines").innerHTML="";lineIns();$("prTitle").textContent="Nuevo producto";$("prCancel").hidden=true;calcProd()}
+$("prCancel").onclick=resetProd;
+$("fProd").addEventListener("submit",async e=>{
+  e.preventDefault();const id=$("prId").value;const prev=id?byId("productos",id):null;const d=readProd();
+  if(!d.nombre||d.rinde<=0){toast("Pon el nombre y cuántas unidades salen por lote");return}
+  d.creado=prev?.creado||Date.now();if(prev?.ejemplo)d.ejemplo=true;
+  if(await save("productos",id||null,d)){toast(id?"Producto actualizado":"Producto agregado");resetProd()}
+});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-edit-prod]");if(!b)return;const p=byId("productos",b.dataset.editProd);if(!p)return;
+  $("prId").value=p.id;$("prNombre").value=p.nombre||"";$("prRinde").value=p.rinde||"";$("prUnidad").value=p.unidad||"";
+  $("prOtros").value=p.otrosCostos||"";$("prMargen").value=p.margen||"";$("prPrecio").value=p.precio||"";
+  $("prLines").innerHTML="";(p.receta||[]).forEach(r=>lineIns(r.insumoId,r.cantidad));if(!(p.receta||[]).length)lineIns();
+  $("prTitle").textContent="Editar "+p.nombre;$("prCancel").hidden=false;calcProd();$("prNombre").focus();
+});
+function renderProductos(){
+  [...$("prLines").children].forEach(l=>{const s=l.querySelector("select");const v=s.value;s.innerHTML=opts(sortN(S.insumos),v,"Elige…");const i=byId("insumos",s.value);const u=l.querySelector(".u");if(u)u.textContent=i?i.unidad:""});
+  if(!$("prLines").children.length)lineIns();
+  calcProd();
+  const L=sortN(S.productos);
+  $("lProductos").innerHTML=L.length?`<table><thead><tr><th>Producto</th><th class="n">Costo lote</th><th class="n">Costo unidad</th><th class="n">Precio</th><th class="n">Ganancia</th><th></th></tr></thead><tbody>${
+    L.map(p=>{const cl=costoLote(p).total,cu=costoUnit(p),pr=precio(p);
+      return `<tr><td><b>${esc(p.nombre)}</b>${exPill(p)}<span class="s">Lote rinde ${qty(p.rinde)} ${esc(p.unidad)} · ${(p.receta||[]).length} materias primas</span></td>
+      <td class="n">${money(cl)}</td><td class="n">${money(cu)}</td><td class="n"><span class="price">${money(pr)}</span><span class="s">${num(p.precio)>0?"fijado por ti":"sugerido "+qty(p.margen)+"%"}</span></td>
+      <td class="n">${money(pr-cu)}<span class="s">por ${esc(p.unidad)}</span></td>
+      <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-prod="${esc(p.id)}">Editar</button>${delBtn("productos",p.id)}</span></td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Crea tu primer producto con su receta, por ejemplo "Tostones clásicos 150 g".</div>`;
+}
+
+/* ---------- PRODUCCION ---------- */
+function planProd(){
+  const p=byId("productos",$("pdProd").value);const lotes=num($("pdLotes").value);if(!p||lotes<=0)return null;
+  const consumos=(p.receta||[]).map(r=>{const i=byId("insumos",r.insumoId);return {insumoId:r.insumoId,cantidad:num(r.cantidad)*lotes,costo:i?num(i.costo):0,nombre:i?.nombre||"(borrada)",unidad:i?.unidad||"",stock:i?stockIns(i):0}});
+  const mat=consumos.reduce((a,k)=>a+k.cantidad*k.costo,0),otros=num(p.otrosCostos)*lotes,total=mat+otros;
+  const real=num($("pdReal").value);const unidades=real>0?real:num(p.rinde)*lotes;
+  return {p,lotes,consumos,mat,otros,total,unidades,cu:unidades>0?total/unidades:0};
+}
+function calcProduccion(){
+  const x=planProd();
+  if(!x){$("pdCalc").innerHTML='<div class="muted" style="display:block">Elige un producto y cuántos lotes hiciste.</div>';$("pdWarn").innerHTML="";return}
+  $("pdCalc").innerHTML=x.consumos.map(k=>`<div class="muted"><span>${esc(k.nombre)}: ${qty(k.cantidad)} ${esc(k.unidad)}</span><span>${money(k.cantidad*k.costo)}</span></div>`).join("")+
+   `<div><span>Otros costos</span><span>${money(x.otros)}</span></div><div class="t"><span>Costo total</span><span>${money(x.total)}</span></div>
+    <div><span>Salen</span><span>${qty(x.unidades)} ${esc(x.p.unidad)}</span></div><div class="t"><span>Costo por ${esc(x.p.unidad)}</span><span>${money(x.cu)}</span></div>`;
+  const falt=x.consumos.filter(k=>k.cantidad>k.stock);
+  $("pdWarn").innerHTML=falt.length?`<div class="note warn">No alcanza el inventario de: ${falt.map(k=>`${esc(k.nombre)} (tienes ${qty(k.stock)}, necesitas ${qty(k.cantidad)})`).join(", ")}. Puedes registrarlo igual, pero revisa tus compras.</div>`:"";
+}
+["pdProd","pdLotes","pdReal"].forEach(id=>{$(id).addEventListener("input",calcProduccion);$(id).addEventListener("change",calcProduccion)});
+$("fProduccion").addEventListener("submit",async e=>{
+  e.preventDefault();const x=planProd();if(!x){toast("Elige producto y lotes");return}
+  const ok=await save("producciones",null,{productoId:x.p.id,lotes:x.lotes,unidades:x.unidades,
+    consumos:x.consumos.map(k=>({insumoId:k.insumoId,cantidad:k.cantidad,costo:k.costo})),
+    costoMateriales:x.mat,otrosCostos:x.otros,costoTotal:x.total,costoUnitario:x.cu,fecha:$("pdFecha").value||today(),creado:Date.now()});
+  if(ok){toast("Producción registrada");$("pdReal").value="";calcProduccion()}
+});
+function renderProduccion(){
+  fillSelect($("pdProd"),sortN(S.productos),"Elige…");calcProduccion();
+  const L=sortF(S.producciones).slice(0,60);
+  $("lProducciones").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Producto</th><th class="n">Lotes</th><th class="n">Unidades</th><th class="n">Costo total</th><th class="n">Costo c/u</th><th></th></tr></thead><tbody>${
+    L.map(x=>{const p=byId("productos",x.productoId);return `<tr><td>${fdate(x.fecha)}</td><td>${p?esc(p.nombre):"(borrado)"}${exPill(x)}</td><td class="n">${qty(x.lotes)}</td><td class="n">${qty(x.unidades)}</td><td class="n">${money(x.costoTotal)}</td><td class="n">${money(x.costoUnitario)}</td><td class="n">${delBtn("producciones",x.id,"Anular")}</td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Cuando produzcas un lote, regístralo aquí.</div>`;
+}
+
+/* ---------- VENTAS ---------- */
+function lineVenta(sel,cant,pre){
+  const d=document.createElement("div");d.className="line v";
+  d.innerHTML=`<select aria-label="Producto">${opts(sortN(S.productos),sel,"Elige…")}</select><input type="number" step="any" min="0" aria-label="Cantidad" placeholder="Cant." value="${cant??""}"><input type="number" step="any" min="0" aria-label="Precio" placeholder="Precio" value="${pre??""}"><button type="button" class="x" aria-label="Quitar">×</button>`;
+  const [s,c,pr]=d.querySelectorAll("select,input");
+  s.addEventListener("change",()=>{const p=byId("productos",s.value);if(p)pr.value=Math.round(precio(p)*100)/100;if(!c.value)c.value=1;calcVenta()});
+  d.addEventListener("input",calcVenta);d.querySelector(".x").onclick=()=>{d.remove();calcVenta()};
+  $("veLines").appendChild(d);
+}
+$("veAdd").onclick=()=>lineVenta();
+function readVenta(){
+  return [...$("veLines").children].map(l=>{const [s,c,pr]=l.querySelectorAll("select,input");const p=byId("productos",s.value);
+    return p?{productoId:p.id,cantidad:num(c.value),precio:num(pr.value),costoUnit:costoProm(p),p}:null}).filter(x=>x&&x.cantidad>0);
+}
+function calcVenta(){
+  const it=readVenta();const tot=it.reduce((a,x)=>a+x.cantidad*x.precio,0),cos=it.reduce((a,x)=>a+x.cantidad*x.costoUnit,0);
+  $("veCalc").innerHTML=it.length?`<div class="t"><span>Total a cobrar</span><span>${money(tot)}</span></div><div class="muted"><span>Costo de lo vendido</span><span>${money(cos)}</span></div><div><span>Ganancia</span><b>${money(tot-cos)}</b></div>`:`<div class="muted" style="display:block">Agrega productos a la venta.</div>`;
+  const falt=it.filter(x=>x.cantidad>stockProd(x.p));
+  $("veWarn").innerHTML=falt.length?`<div class="note warn">No hay suficiente en inventario de: ${falt.map(x=>`${esc(x.p.nombre)} (hay ${qty(stockProd(x.p))})`).join(", ")}. ¿Falta registrar una producción?</div>`:"";
+}
+$("fVenta").addEventListener("submit",async e=>{
+  e.preventDefault();const it=readVenta();if(!it.length){toast("Agrega al menos un producto");return}
+  const items=it.map(x=>({productoId:x.productoId,cantidad:x.cantidad,precio:x.precio,costoUnit:x.costoUnit}));
+  const total=items.reduce((a,x)=>a+x.cantidad*x.precio,0),costo=items.reduce((a,x)=>a+x.cantidad*x.costoUnit,0);
+  const ok=await save("ventas",null,{clienteId:$("veCli").value||"",fecha:$("veFecha").value||today(),pago:$("vePago").value,items,total,costo,creado:Date.now()});
+  if(ok){toast("Venta registrada");$("veLines").innerHTML="";lineVenta();calcVenta()}
+});
+function renderVentas(){
+  fillSelect($("veCli"),sortN(S.clientes),"Cliente general");
+  [...$("veLines").children].forEach(l=>{const s=l.querySelector("select");const v=s.value;s.innerHTML=opts(sortN(S.productos),v,"Elige…")});
+  if(!$("veLines").children.length)lineVenta();
+  calcVenta();
+  const L=sortF(S.ventas).slice(0,60);
+  $("lVentas").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th class="n">Total</th><th class="n">Ganancia</th><th></th></tr></thead><tbody>${
+    L.map(v=>{const c=byId("clientes",v.clienteId);return `<tr><td>${fdate(v.fecha)}</td><td>${c?esc(c.nombre):"Cliente general"}${exPill(v)}<span class="s">${esc(v.pago||"")}</span></td>
+    <td>${(v.items||[]).map(it=>{const p=byId("productos",it.productoId);return `${qty(it.cantidad)} × ${p?esc(p.nombre):"(borrado)"} <span class="muted">a ${money(it.precio)}</span>`}).join("<br>")}</td>
+    <td class="n">${money(v.total)}</td><td class="n">${money(num(v.total)-num(v.costo))}</td><td class="n">${delBtn("ventas",v.id,"Anular")}</td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Aún no hay ventas. Registra la primera con el formulario.</div>`;
+}
+
+/* ---------- PROVEEDORES / CLIENTES ---------- */
+function simpleCrud(cfg){
+  const f=$(cfg.form);
+  const reset=()=>{f.reset();$(cfg.idEl).value="";$(cfg.title).textContent=cfg.newTitle;$(cfg.cancel).hidden=true};
+  $(cfg.cancel).onclick=reset;
+  f.addEventListener("submit",async e=>{
+    e.preventDefault();const id=$(cfg.idEl).value;const prev=id?byId(cfg.col,id):null;const d=cfg.read();
+    if(!d.nombre)return;d.creado=prev?.creado||Date.now();if(prev?.ejemplo)d.ejemplo=true;
+    if(await save(cfg.col,id||null,d)){toast("Guardado");reset()}
+  });
+  document.addEventListener("click",e=>{const b=e.target.closest(`[data-edit-${cfg.col}]`);if(!b)return;const x=byId(cfg.col,b.getAttribute(`data-edit-${cfg.col}`));if(!x)return;
+    $(cfg.idEl).value=x.id;cfg.fill(x);$(cfg.title).textContent="Editar "+x.nombre;$(cfg.cancel).hidden=false});
+}
+simpleCrud({col:"proveedores",form:"fProv",idEl:"pvId",title:"pvTitle",cancel:"pvCancel",newTitle:"Nuevo proveedor",
+  read:()=>({nombre:$("pvNombre").value.trim(),telefono:$("pvTel").value.trim(),notas:$("pvNotas").value.trim()}),
+  fill:x=>{$("pvNombre").value=x.nombre||"";$("pvTel").value=x.telefono||"";$("pvNotas").value=x.notas||""}});
+simpleCrud({col:"clientes",form:"fCli",idEl:"clId",title:"clTitle",cancel:"clCancel",newTitle:"Nuevo cliente",
+  read:()=>({nombre:$("clNombre").value.trim(),telefono:$("clTel").value.trim(),tipo:$("clTipo").value,direccion:$("clDir").value.trim()}),
+  fill:x=>{$("clNombre").value=x.nombre||"";$("clTel").value=x.telefono||"";$("clTipo").value=x.tipo||"Otro";$("clDir").value=x.direccion||""}});
+function renderProvCli(){
+  const P=sortN(S.proveedores);
+  $("lProv").innerHTML=P.length?`<table><thead><tr><th>Proveedor</th><th>Teléfono</th><th class="n">Comprado</th><th></th></tr></thead><tbody>${
+    P.map(p=>{const t=S.compras.filter(c=>c.proveedorId===p.id).reduce((a,c)=>a+num(c.total),0);
+      return `<tr><td><b>${esc(p.nombre)}</b>${exPill(p)}<span class="s">${esc(p.notas||"")}</span></td><td>${esc(p.telefono||"")}</td><td class="n">${money(t)}</td>
+      <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-proveedores="${esc(p.id)}">Editar</button>${delBtn("proveedores",p.id)}</span></td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Agrega a quien te vende el plátano, el aceite o las bolsas.</div>`;
+  const C=sortN(S.clientes);
+  $("lCli").innerHTML=C.length?`<table><thead><tr><th>Cliente</th><th>Teléfono</th><th class="n">Compras</th><th></th></tr></thead><tbody>${
+    C.map(c=>{const vs=S.ventas.filter(v=>v.clienteId===c.id);const t=vs.reduce((a,v)=>a+num(v.total),0);
+      return `<tr><td><b>${esc(c.nombre)}</b>${exPill(c)}<span class="s">${esc(c.tipo||"")}${c.direccion?" · "+esc(c.direccion):""}</span></td><td>${esc(c.telefono||"")}</td><td class="n">${money(t)}<span class="s">${vs.length} ventas</span></td>
+      <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-clientes="${esc(c.id)}">Editar</button>${delBtn("clientes",c.id)}</span></td></tr>`}).join("")
+  }</tbody></table>`:`<div class="empty">Agrega a tus clientes: colmados, supermercados, distribuidores.</div>`;
+}
+
+/* ---------- RESUMEN ---------- */
+function renderResumen(){
+  const mes=today().slice(0,7);
+  const vm=S.ventas.filter(v=>(v.fecha||"").startsWith(mes));
+  const vtot=vm.reduce((a,v)=>a+num(v.total),0),gan=vm.reduce((a,v)=>a+num(v.total)-num(v.costo),0);
+  const invMP=S.insumos.reduce((a,i)=>a+Math.max(stockIns(i),0)*num(i.costo),0);
+  const invPT=S.productos.reduce((a,p)=>a+Math.max(stockProd(p),0)*costoProm(p),0);
+  const uPT=S.productos.reduce((a,p)=>a+Math.max(stockProd(p),0),0);
+  const prodMes=S.producciones.filter(x=>(x.fecha||"").startsWith(mes)).reduce((a,x)=>a+num(x.unidades),0);
+  $("kpis").innerHTML=`
+   <div class="kpi"><div class="l">Ventas del mes</div><div class="v">${money(vtot)}</div><div class="h">${vm.length} ventas</div></div>
+   <div class="kpi"><div class="l">Ganancia del mes</div><div class="v">${money(gan)}</div><div class="h">${vtot>0?pct(gan/vtot*100)+" de lo vendido":"sin ventas aún"}</div></div>
+   <div class="kpi"><div class="l">Producido este mes</div><div class="v">${qty(prodMes)}</div><div class="h">unidades</div></div>
+   <div class="kpi"><div class="l">Inventario</div><div class="v">${money(invMP+invPT)}</div><div class="h">${money(invMP)} materia prima · ${qty(uPT)} unid. listas</div></div>`;
+  const al=[];
+  S.insumos.forEach(i=>{const s=stockIns(i);if(s<0)al.push(`<div class="note bad">${esc(i.nombre)}: inventario negativo (${qty(s)} ${esc(i.unidad)}). Falta registrar una compra.</div>`);else if(num(i.minimo)>0&&s<=num(i.minimo))al.push(`<div class="note warn">${esc(i.nombre)}: quedan ${qty(s)} ${esc(i.unidad)}. Toca comprar.</div>`)});
+  S.productos.forEach(p=>{const cu=costoUnit(p),pr=precio(p);if(p.rinde>0&&pr<=cu)al.push(`<div class="note bad">${esc(p.nombre)}: el precio (${money(pr)}) no cubre el costo (${money(cu)}).</div>`)});
+  $("alertas").innerHTML=al.length?`<div style="display:grid;gap:8px">${al.join("")}</div>`:`<div class="muted">Todo en orden. Aquí aparecerán las materias primas por agotarse y los precios que no cubren el costo.</div>`;
+  const P=sortN(S.productos);
+  $("resProd").innerHTML=P.length?`<table><thead><tr><th>Producto</th><th class="n">Listas</th><th class="n">Costo</th><th class="n">Precio</th></tr></thead><tbody>${
+    P.map(p=>{const s=stockProd(p);return `<tr><td>${esc(p.nombre)}</td><td class="n">${qty(s)} ${s<0?'<span class="pill neg">Negativo</span>':""}</td><td class="n">${money(costoUnit(p))}</td><td class="n"><span class="price">${money(precio(p))}</span></td></tr>`}).join("")
+  }</tbody></table>`:`<div class="muted">Crea un producto en “Productos y recetas”.</div>`;
+  const mv=[
+    ...S.compras.map(c=>({f:c.fecha,cr:c.creado,t:"Compra",d:(byId("insumos",c.insumoId)?.nombre||"")+" · "+qty(c.cantidad)+" "+(byId("insumos",c.insumoId)?.unidad||""),m:-num(c.total)})),
+    ...S.producciones.map(x=>({f:x.fecha,cr:x.creado,t:"Producción",d:(byId("productos",x.productoId)?.nombre||"")+" · "+qty(x.unidades)+" unid.",m:null})),
+    ...S.ventas.map(v=>({f:v.fecha,cr:v.creado,t:"Venta",d:(byId("clientes",v.clienteId)?.nombre||"Cliente general"),m:num(v.total)}))
+  ].sort((a,b)=>String(b.f||"").localeCompare(String(a.f||""))||num(b.cr)-num(a.cr)).slice(0,10);
+  $("movs").innerHTML=mv.length?`<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th class="n">Dinero</th></tr></thead><tbody>${
+    mv.map(m=>`<tr><td>${fdate(m.f)}</td><td><span class="pill">${m.t}</span></td><td>${esc(m.d)}</td><td class="n">${m.m==null?"—":(m.m<0?"− "+money(-m.m):"+ "+money(m.m))}</td></tr>`).join("")
+  }</tbody></table>`:`<div class="muted">Aquí verás compras, producciones y ventas a medida que las registres.</div>`;
+  const hasEx=COLS.some(c=>S[c].some(x=>x.ejemplo));$("exBox").hidden=!hasEx;
+}
+$("delEx").addEventListener("click",async e=>{
+  const b=e.currentTarget;if(!b.dataset.armed){b.dataset.armed="1";b.textContent="Confirmar: borrar todos los ejemplos";return}
+  b.disabled=true;b.textContent="Borrando…";
+  for(const c of COLS){for(const x of S[c].filter(x=>x.ejemplo)){try{await db.collection(c).doc(x.id).delete()}catch(_){}}}
+  toast("Ejemplos borrados");b.disabled=false;delete b.dataset.armed;b.textContent="Borrar datos de ejemplo";
+});
+
+/* ---------- EXCEL ---------- */
+let DL=null;
+(async()=>{try{DL=await window.claude?.use?.("downloads")}catch(e){DL=null}
+  if(DL&&window.XLSX)$("xlBox").hidden=false})();
+function r2(n){return Math.round(num(n)*100)/100}
+function libro(){
+  const nm=(c,id)=>byId(c,id)?.nombre||"";
+  const hojas={
+    "Materias primas":sortN(S.insumos).map(i=>({"Nombre":i.nombre,"Unidad":i.unidad,"Costo por unidad":r2(i.costo),"En inventario":Math.round(stockIns(i)*1000)/1000,"Valor inventario":r2(Math.max(stockIns(i),0)*num(i.costo)),"Avisar si baja de":num(i.minimo),"Proveedor":nm("proveedores",i.proveedorId)})),
+    "Compras":sortF(S.compras).map(c=>({"Fecha":c.fecha,"Materia prima":nm("insumos",c.insumoId),"Cantidad":num(c.cantidad),"Unidad":byId("insumos",c.insumoId)?.unidad||"","Total pagado":r2(c.total),"Costo por unidad":r2(num(c.total)/Math.max(num(c.cantidad),1e-9)),"Proveedor":nm("proveedores",c.proveedorId)})),
+    "Productos":sortN(S.productos).map(p=>({"Producto":p.nombre,"Unidades por lote":num(p.rinde),"Se vende por":p.unidad,"Costo materias primas por lote":r2(costoLote(p).mat),"Otros costos por lote":r2(p.otrosCostos),"Costo total por lote":r2(costoLote(p).total),"Costo por unidad":r2(costoUnit(p)),"% ganancia":num(p.margen),"Precio de venta":r2(precio(p)),"Ganancia por unidad":r2(precio(p)-costoUnit(p)),"Unidades en inventario":stockProd(p)})),
+    "Recetas":S.productos.flatMap(p=>(p.receta||[]).map(r=>{const i=byId("insumos",r.insumoId);return {"Producto":p.nombre,"Materia prima":i?.nombre||"","Cantidad por lote":num(r.cantidad),"Unidad":i?.unidad||"","Costo":r2(num(r.cantidad)*num(i?.costo))}})),
+    "Producción":sortF(S.producciones).map(x=>({"Fecha":x.fecha,"Producto":nm("productos",x.productoId),"Lotes":num(x.lotes),"Unidades":num(x.unidades),"Costo materias primas":r2(x.costoMateriales),"Otros costos":r2(x.otrosCostos),"Costo total":r2(x.costoTotal),"Costo por unidad":r2(x.costoUnitario)})),
+    "Ventas":sortF(S.ventas).flatMap(v=>(v.items||[]).map(it=>({"Fecha":v.fecha,"Cliente":nm("clientes",v.clienteId)||"Cliente general","Pago":v.pago||"","Producto":nm("productos",it.productoId),"Cantidad":num(it.cantidad),"Precio":r2(it.precio),"Total":r2(num(it.cantidad)*num(it.precio)),"Costo":r2(num(it.cantidad)*num(it.costoUnit)),"Ganancia":r2(num(it.cantidad)*(num(it.precio)-num(it.costoUnit)))}))),
+    "Proveedores":sortN(S.proveedores).map(p=>({"Nombre":p.nombre,"Teléfono":p.telefono||"","Notas":p.notas||"","Total comprado":r2(S.compras.filter(c=>c.proveedorId===p.id).reduce((a,c)=>a+num(c.total),0))})),
+    "Clientes":sortN(S.clientes).map(c=>({"Nombre":c.nombre,"Teléfono":c.telefono||"","Tipo":c.tipo||"","Dirección / notas":c.direccion||"","Total comprado":r2(S.ventas.filter(v=>v.clienteId===c.id).reduce((a,v)=>a+num(v.total),0))}))
+  };
+  const wb=XLSX.utils.book_new();
+  Object.entries(hojas).forEach(([n,rows])=>{
+    const ws=rows.length?XLSX.utils.json_to_sheet(rows):XLSX.utils.aoa_to_sheet([["Sin datos"]]);
+    if(rows.length)ws["!cols"]=Object.keys(rows[0]).map(k=>({wch:Math.max(k.length,...rows.map(r=>String(r[k]??"").length))+2}));
+    XLSX.utils.book_append_sheet(wb,ws,n);
+  });
+  return XLSX.write(wb,{bookType:"xlsx",type:"array"});
+}
+$("xlBtn").addEventListener("click",async()=>{
+  if(!DL||!window.XLSX)return;const b=$("xlBtn");b.disabled=true;
+  try{await DL.save({filename:"Tostitos "+today()+".xlsx",data:libro()});toast("Archivo de Excel guardado")}
+  catch(e){const c=e&&e.code;if(c==="declined"){}else if(c==="rate_limited")toast("Espera un momento e intenta de nuevo");else{toast("No se pudo descargar en esta vista");if(c!=="too_large")$("xlBox").hidden=true}}
+  finally{b.disabled=false}
+});
+
+function renderAll(){
+  renderResumen();renderInsumos();renderProductos();renderProduccion();renderVentas();renderProvCli();
+}
+["coFecha","pdFecha","veFecha"].forEach(id=>$(id).value=today());
+presUnits();
+renderAll();
+start();
+})();
+</script>
