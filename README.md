@@ -5,7 +5,8 @@ Sistema web básico para la fábrica de tostones Tostitos: gastos en materia pri
 ## Cómo funciona
 
 - `index.html`: la aplicación completa (no necesita servidor propio).
-- `config.js`: la configuración de tu proyecto de Firebase.
+- `config.js`: la configuración de tu proyecto de Firebase (no es secreta).
+- `xlsx.full.min.js`: librería SheetJS 0.18.5 para generar el Excel, servida desde el repositorio.
 - `firestore.rules`: reglas para que solo tu correo pueda ver y cambiar los datos.
 - `tools/`: de dónde se genera `index.html` (`python3 tools/build_web.py tools/tostitos-artifact.html index.html`).
 

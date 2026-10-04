@@ -146,6 +146,11 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
       <span><b>Tus datos en Excel.</b> <span class="muted">Gastos, producción, ventas, pagos y deudas en un solo archivo.</span></span>
       <button class="btn" id="xlBtn" type="button">Descargar en Excel</button>
     </div>
+    <div class="card" id="bkBox" style="margin-top:20px;display:grid;gap:10px" hidden>
+      <div><b>Copia de seguridad.</b> <span class="muted">Guarda un archivo con todos tus datos. Si algo se borra por error, puedes recuperarlo con ese archivo. Hazla una vez por semana.</span></div>
+      <div class="btns"><button class="btn" id="bkBtn" type="button">Descargar copia de seguridad</button><button class="btn ghost" id="rsBtn" type="button">Restaurar desde una copia</button><input id="rsFile" type="file" accept=".json,application/json" hidden></div>
+      <div id="rsMsg" class="note" hidden></div>
+    </div>
   </section>
 
   <!-- GASTOS -->
@@ -279,7 +284,7 @@ const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOff
 let MON="$";
 const money=n=>MON+" "+(Math.round((n||0)*100)/100).toLocaleString("es",{minimumFractionDigits:2,maximumFractionDigits:2});
 const qty=n=>(Math.round((n||0)*1000)/1000).toLocaleString("es",{maximumFractionDigits:3});
-const fdate=s=>{if(!s)return"";const [y,m,d]=s.split("-");return d+"/"+m+"/"+y};
+const fdate=s=>{if(!s)return"";const [y,m,d]=String(s).split("-");return esc(d+"/"+m+"/"+y)};
 const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const fmes=m=>{const [y,mm]=m.split("-");return MESES[num(mm)-1]+" "+y};
 const byId=(c,id)=>S[c].find(x=>x.id===id);
@@ -529,6 +534,37 @@ $("xlBtn").addEventListener("click",async()=>{
   try{await DL.save({filename:"Tostitos "+today()+".xlsx",data:libro()});toast("Archivo de Excel guardado")}
   catch(e){const c=e&&e.code;if(c==="rate_limited")toast("Espera un momento e intenta de nuevo");else if(c!=="declined")toast("No se pudo descargar en esta vista")}
   finally{b.disabled=false}
+});
+
+/* ---------- COPIA DE SEGURIDAD ---------- */
+const BK_COLS=["gastos","produccion","tipos","ventas","pagos","clientes","ajustes"];
+(async()=>{let d=null;try{d=await window.claude?.use?.("downloads")}catch(e){}if(d)$("bkBox").hidden=false})();
+$("bkBtn").addEventListener("click",async()=>{
+  const datos={};BK_COLS.forEach(c=>datos[c]=S[c].map(x=>Object.assign({},x)));
+  const n=BK_COLS.reduce((a,c)=>a+datos[c].length,0);
+  try{const d=await window.claude.use("downloads");await d.save({filename:"Tostitos copia "+today()+".json",data:JSON.stringify({app:"tostitos",version:1,fecha:new Date().toISOString(),datos},null,1)});toast("Copia guardada: "+n+" registros")}
+  catch(e){if(!(e&&e.code==="declined"))toast("No se pudo guardar la copia")}
+});
+let pend=null;
+$("rsBtn").addEventListener("click",async()=>{
+  if(pend){ // segundo toque: confirmar
+    const p=pend;pend=null;$("rsBtn").textContent="Restaurando…";$("rsBtn").disabled=true;let ok=0,bad=0;
+    for(const [c,list] of Object.entries(p))for(const x of list){const {id,...body}=x;try{await db.collection(c).doc(id).set(body);ok++}catch(e){bad++}}
+    $("rsBtn").disabled=false;$("rsBtn").textContent="Restaurar desde una copia";
+    const m=$("rsMsg");m.hidden=false;m.className="note"+(bad?" warn":"");m.textContent="Restaurados "+ok+" registros"+(bad?". "+bad+" no se pudieron guardar.":".");return}
+  $("rsFile").value="";$("rsFile").click();
+});
+$("rsFile").addEventListener("change",async()=>{
+  const f=$("rsFile").files[0];if(!f)return;const m=$("rsMsg");m.hidden=false;m.className="note bad";
+  if(!db){m.textContent="No se puede restaurar en esta vista.";return}
+  let j;try{j=JSON.parse(await f.text())}catch(e){m.textContent="Ese archivo no es una copia de Tostitos.";return}
+  if(!j||j.app!=="tostitos"||typeof j.datos!=="object"){m.textContent="Ese archivo no es una copia de Tostitos.";return}
+  // Solo colecciones conocidas, ids válidos y registros que sean objetos
+  const okId=id=>typeof id==="string"&&/^[A-Za-z0-9_\-]{1,100}$/.test(id);const p={};let n=0;
+  for(const c of BK_COLS){const list=Array.isArray(j.datos[c])?j.datos[c]:[];p[c]=list.filter(x=>x&&typeof x==="object"&&!Array.isArray(x)&&okId(x.id));n+=p[c].length}
+  if(!n){m.textContent="La copia no tiene registros.";return}
+  pend=p;m.className="note warn";m.textContent="La copia del "+(String(j.fecha||"").slice(0,10)||"?")+" tiene "+n+" registros. Los que ya existen se reemplazan con los de la copia. Toca \"Confirmar restauración\" para continuar.";
+  $("rsBtn").textContent="Confirmar restauración";
 });
 
 function renderAll(){renderResumen();renderGastos();renderProduccion();renderVentas();renderClientes()}

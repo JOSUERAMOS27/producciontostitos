@@ -25,4 +25,6 @@ out = ('<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
        + markup.rstrip() + '\n</div>\n' + fb + scripts + '\n</body>\n</html>\n')
 out = out.replace("No se pueden cargar ni guardar datos en esta vista. Abre el sistema desde tu cuenta de Claude para usarlo.",
                   "No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.")
+# La librería de Excel se sirve desde el propio repositorio (no depende de un CDN externo)
+out = out.replace('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', 'xlsx.full.min.js')
 open(dst, 'w').write(out)
