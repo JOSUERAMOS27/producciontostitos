@@ -26,9 +26,13 @@
       showErr(e)})};
   document.getElementById("logoutBtn").onclick=()=>auth.signOut().then(()=>location.reload());
   let started=false;
-  auth.onAuthStateChanged(u=>{
-    if(!u){box.hidden=false;app.hidden=true;return}
-    box.hidden=true;app.hidden=false;document.getElementById("who").textContent=u.email||"";
+  let denied="";
+  auth.onAuthStateChanged(async u=>{
+    if(!u){box.hidden=false;app.hidden=true;if(denied){msg.innerHTML="";const b=document.createElement("b");b.textContent=denied;msg.append("El correo ",b," no está autorizado para usar Tostitos. Entra con el correo registrado o pide que lo agreguen en las reglas de Firebase.");denied=""}return}
+    msg.textContent="Revisando tu acceso…";
+    try{await fs.collection("ajustes").limit(1).get({source:"server"})}
+    catch(e){if(e&&e.code==="permission-denied"){denied=u.email||"(sin correo)";await auth.signOut();return}} // sin internet: deja entrar con lo guardado
+    msg.textContent="";box.hidden=true;app.hidden=false;document.getElementById("who").textContent=u.email||"";
     if(!started){started=true;resolveDb(fs)}
   });
 })();
