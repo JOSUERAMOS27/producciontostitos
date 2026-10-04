@@ -194,13 +194,13 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
           <h3 id="pdTitle">Registrar producción</h3>
           <form id="fProd">
             <input type="hidden" id="pdId">
-            <div class="row2">
-              <label for="pdFecha">Fecha<input id="pdFecha" type="date" required></label>
-              <label for="pdTipo">Tipo de tostón<select id="pdTipo" required></select></label>
+            <label for="pdFecha">Fecha<input id="pdFecha" type="date" required></label>
+            <div>
+              <h3 style="margin:6px 0 6px">Tostones producidos</h3>
+              <div class="lines" id="pdLines"></div>
+              <button class="btn ghost sm" type="button" id="pdAdd" style="margin-top:6px">+ Agregar otro tipo</button>
             </div>
-            <label for="pdCant">Unidades producidas<input id="pdCant" type="number" step="any" min="0" required placeholder="120"></label>
-            <label for="pdCosto">Lo que gastaste en esta producción<input id="pdCosto" type="number" step="any" min="0" placeholder="Plátano, aceite, bolsas, gas, mano de obra…"></label>
-            <label for="pdPrecio">Precio de venta por unidad<input id="pdPrecio" type="number" step="any" min="0" placeholder="Se llena con el precio del tipo"></label>
+            <label for="pdCosto">Lo que gastaste en toda esta producción<input id="pdCosto" type="number" step="any" min="0" placeholder="Plátano, aceite, bolsas, gas, mano de obra…"></label>
             <div class="calc" id="pdCalc"></div>
             <label for="pdNota">Nota<input id="pdNota" placeholder="Opcional"></label>
             <div class="btns"><button class="btn" type="submit" id="pdSave">Guardar producción</button><button class="btn ghost" type="button" id="pdCancel" hidden>Cancelar</button></div>
@@ -359,7 +359,7 @@ function calcGasto(){const c=num($("gaCant").value),m=num($("gaMonto").value),u=
 $("gaDesc").addEventListener("change",()=>{ // recuerda la última unidad y tipo usados para esa compra
   const d=$("gaDesc").value.trim().toLowerCase();const last=sortF(S.gastos).find(g=>String(g.descripcion).toLowerCase()===d);
   if(last){if(last.unidad)$("gaUnidad").value=last.unidad;$("gaTipo").value=last.tipo||"Materia prima";if(last.proveedor&&!$("gaProv").value)$("gaProv").value=last.proveedor}});
-function resetGasto(){$("gaId").value="";["gaDesc","gaCant","gaMonto","gaProv"].forEach(id=>$(id).value="");modoEditar("ga",false,"","Nuevo gasto");calcGasto()}
+function resetGasto(){if($("gaId").value)$("gaFecha").value=today();$("gaId").value="";["gaDesc","gaCant","gaMonto","gaProv"].forEach(id=>$(id).value="");modoEditar("ga",false,"","Nuevo gasto");calcGasto()}
 $("gaCancel").onclick=resetGasto;
 EDIT.gasto=id=>{const g=byId("gastos",id);if(!g)return;$("gaId").value=g.id;$("gaFecha").value=g.fecha||today();$("gaTipo").value=g.tipo||"Materia prima";$("gaDesc").value=g.descripcion||"";
   $("gaCant").value=num(g.cantidad)>0?g.cantidad:"";$("gaUnidad").value=g.unidad||"";$("gaMonto").value=g.monto||"";$("gaProv").value=g.proveedor||"";calcGasto();modoEditar("ga",true,"Editar gasto: "+g.descripcion)};
@@ -396,38 +396,68 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-edit-tipo]
 function margenProd(cant,costo,precio){const cu=cant>0?costo/cant:0;return {cu,gan:precio-cu,pct:precio>0?(precio-cu)/precio*100:0,total:cant*precio-costo}}
 const pctTxt=n=>(Math.round(n*10)/10).toLocaleString("es",{maximumFractionDigits:1})+"%";
 const margenPill=p=>`<span class="pill ${p<0?"neg":p<20?"low":"ok"}">${pctTxt(p)}</span>`;
-function calcProd(){
-  const c=num($("pdCant").value),k=num($("pdCosto").value),pr=num($("pdPrecio").value);
-  if(!(c>0&&k>0)){$("pdCalc").innerHTML='<div class="muted" style="display:block">Escribe las unidades y lo que gastaste para ver el costo por unidad y tu margen.</div>';return}
-  const m=margenProd(c,k,pr);
-  $("pdCalc").innerHTML=`<div><span>Costo por unidad</span><b>${money(m.cu)}</b></div>${pr>0?`<div><span>Ganancia por unidad</span><b>${money(m.gan)}</b></div>
-   <div><span>Margen de ganancia</span>${margenPill(m.pct)}</div><div class="t"><span>Si vendes todo ganas</span><span>${money(m.total)}</span></div>`:'<div class="muted" style="display:block">Pon el precio de venta para ver tu margen.</div>'}`;
+/* Una producción tiene varios tipos (items) y un gasto total.
+   El gasto se reparte entre los tipos según las unidades: cada unidad cuesta lo mismo.
+   Los registros viejos (un solo tipo) se leen igual. */
+function prodItems(p){
+  const it=Array.isArray(p.items)?p.items:[{tipoId:p.tipoId,cantidad:p.cantidad,precio:p.precio}];
+  const u=it.reduce((a,x)=>a+num(x.cantidad),0),k=num(p.costo);
+  return it.map(x=>({tipoId:x.tipoId,cantidad:num(x.cantidad),precio:num(x.precio)||num(byId("tipos",x.tipoId)?.precio),costo:u>0?k*num(x.cantidad)/u:0}));
 }
-["pdCant","pdCosto","pdPrecio"].forEach(id=>$(id).addEventListener("input",calcProd));
-$("pdTipo").addEventListener("change",()=>{const t=byId("tipos",$("pdTipo").value);if(t&&t.precio)$("pdPrecio").value=t.precio;calcProd()});
-function resetProd(){$("pdId").value="";["pdCant","pdCosto","pdNota"].forEach(id=>$(id).value="");modoEditar("pd",false,"","Registrar producción");calcProd()}
+/* Resumen de una lista de items con gasto total k */
+function resumenProd(it,k){
+  const u=it.reduce((a,x)=>a+x.cantidad,0),cu=u>0?k/u:0;
+  const venta=it.reduce((a,x)=>a+x.cantidad*x.precio,0),todosConPrecio=it.length&&it.every(x=>x.precio>0);
+  return {u,cu,venta,todosConPrecio,gan:venta-k,pct:venta>0?(venta-k)/venta*100:0};
+}
+function linePd(it){
+  const d=document.createElement("div");d.className="line v";
+  d.innerHTML=`<select aria-label="Tipo de tostón">${opts(sortN(S.tipos),"","Tipo…")}</select><input type="number" step="any" min="0" aria-label="Unidades" placeholder="Unid."><input type="number" step="any" min="0" aria-label="Precio de venta" placeholder="Precio"><button type="button" class="x" aria-label="Quitar">×</button>`;
+  const [sl,c,pr]=d.querySelectorAll("select,input");
+  sl.addEventListener("change",()=>{const t=byId("tipos",sl.value);if(t&&t.precio)pr.value=t.precio;calcProd()});
+  d.addEventListener("input",calcProd);d.querySelector(".x").onclick=()=>{d.remove();if(!$("pdLines").children.length)linePd();calcProd()};
+  if(it){if(!byId("tipos",it.tipoId))sl.insertAdjacentHTML("beforeend",`<option value="${esc(it.tipoId)}">(tipo borrado)</option>`);sl.value=it.tipoId;c.value=it.cantidad||"";pr.value=it.precio||""}
+  $("pdLines").appendChild(d);
+}
+$("pdAdd").onclick=()=>linePd();
+function readPd(){return [...$("pdLines").children].map(l=>{const [sl,c,pr]=l.querySelectorAll("select,input");return {tipoId:sl.value,cantidad:num(c.value),precio:num(pr.value)}}).filter(x=>x.tipoId&&x.cantidad>0)}
+function calcProd(){
+  const it=readPd(),k=num($("pdCosto").value);
+  if(!it.length){$("pdCalc").innerHTML='<div class="muted" style="display:block">Elige cada tipo de tostón con sus unidades y su precio de venta.</div>';return}
+  const r=resumenProd(it,k);
+  let h=`<div><span>Unidades en total</span><b>${qty(r.u)}</b></div>`;
+  if(!(k>0)){$("pdCalc").innerHTML=h+'<div class="muted" style="display:block">Escribe lo que gastaste para ver el costo por unidad y tu margen.</div>';return}
+  h+=`<div><span>Costo por unidad</span><b>${money(r.cu)}</b></div>`;
+  h+=it.map(x=>x.precio>0?`<div><span>${esc(nomTipo(x.tipoId))}: gana ${money(x.precio-r.cu)} c/u</span>${margenPill((x.precio-r.cu)/x.precio*100)}</div>`:`<div><span>${esc(nomTipo(x.tipoId))}</span><span class="muted">sin precio</span></div>`).join("");
+  if(r.todosConPrecio)h+=`<div><span>Margen de toda la producción</span>${margenPill(r.pct)}</div><div class="t"><span>Si vendes todo ganas</span><span>${money(r.gan)}</span></div>`;
+  $("pdCalc").innerHTML=h;
+}
+$("pdCosto").addEventListener("input",calcProd);
+function resetProd(){if($("pdId").value)$("pdFecha").value=today();$("pdId").value="";["pdCosto","pdNota"].forEach(id=>$(id).value="");$("pdLines").innerHTML="";linePd();modoEditar("pd",false,"","Registrar producción");calcProd()}
 $("pdCancel").onclick=resetProd;
 EDIT.prod=id=>{const p=byId("produccion",id);if(!p)return;$("pdId").value=p.id;$("pdFecha").value=p.fecha||today();
-  if(!byId("tipos",p.tipoId))toast("El tipo de tostón de esta producción fue borrado: elige otro");$("pdTipo").value=byId("tipos",p.tipoId)?p.tipoId:"";
-  $("pdCant").value=p.cantidad||"";$("pdCosto").value=num(p.costo)>0?p.costo:"";$("pdPrecio").value=num(p.precio)>0?p.precio:"";$("pdNota").value=p.nota||"";calcProd();modoEditar("pd",true,"Editar producción del "+fdate(p.fecha).replace(/<[^>]*>/g,""))};
+  $("pdLines").innerHTML="";prodItems(p).forEach(x=>linePd(x));if(!$("pdLines").children.length)linePd();
+  $("pdCosto").value=num(p.costo)>0?p.costo:"";$("pdNota").value=p.nota||"";calcProd();modoEditar("pd",true,"Editar producción del "+fdate(p.fecha).replace(/<[^>]*>/g,""))};
 $("fProd").addEventListener("submit",async e=>{
   e.preventDefault();const id=$("pdId").value;const prev=id?byId("produccion",id):null;if(id&&!prev){toast("Esa producción ya fue borrada");resetProd();return}
-  const d={fecha:$("pdFecha").value||today(),tipoId:$("pdTipo").value,cantidad:num($("pdCant").value),costo:num($("pdCosto").value),precio:num($("pdPrecio").value),nota:$("pdNota").value.trim(),creado:prev?.creado||Date.now()};
-  if(!d.tipoId||d.cantidad<=0){toast("Elige el tipo de tostón y la cantidad");return}
+  const items=readPd();if(!items.length){toast("Agrega al menos un tipo de tostón con sus unidades");return}
+  const d={fecha:$("pdFecha").value||today(),items,cantidad:items.reduce((a,x)=>a+x.cantidad,0),costo:num($("pdCosto").value),nota:$("pdNota").value.trim(),creado:prev?.creado||Date.now()};
   if(await save("produccion",id||null,d)){toast(id?"Producción actualizada":"Producción guardada");resetProd()}
 });
 function renderProduccion(){
-  const T=sortN(S.tipos);fill($("pdTipo"),T,T.length?"Elige…":"Primero agrega un tipo abajo");
+  const T=sortN(S.tipos);
+  [...$("pdLines").children].forEach(l=>{const sl=l.querySelector("select");const v=sl.value;sl.innerHTML=opts(T,v,T.length?"Tipo…":"Agrega un tipo abajo");if(v&&!T.some(t=>t.id===v))sl.insertAdjacentHTML("beforeend",`<option value="${esc(v)}" selected>(tipo borrado)</option>`)});
+  if(!$("pdLines").children.length)linePd();
   $("lTipos").innerHTML=T.length?`<table><tbody>${T.map(t=>`<tr><td><b>${esc(t.nombre)}</b><span class="s">${t.precio?money(t.precio)+" por unidad":"Sin precio"}</span></td>
     <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-tipo="${esc(t.id)}">Editar</button>${delBtn("tipos",t.id)}</span></td></tr>`).join("")}</tbody></table>`
     :`<div class="empty">Agrega tus tipos de tostón: clásico, con ajo, picante…</div>`;
   const L=sortF(S.produccion).slice(0,100);
   calcProd();
-  $("lProd").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Tipo de tostón</th><th class="n">Unidades</th><th class="n">Gasto</th><th class="n">Costo c/u</th><th class="n">Margen</th><th></th></tr></thead><tbody>${
-    L.map(p=>{const k=num(p.costo),pr=num(p.precio)||num(byId("tipos",p.tipoId)?.precio);const m=margenProd(num(p.cantidad),k,pr);
-    return `<tr><td>${fdate(p.fecha)}</td><td>${esc(nomTipo(p.tipoId))}${p.nota?`<span class="s">${esc(p.nota)}</span>`:""}</td><td class="n">${qty(p.cantidad)}</td>
-    <td class="n">${k>0?money(k):"—"}</td><td class="n">${k>0?money(m.cu):"—"}${k>0&&pr>0?`<span class="s">vende a ${money(pr)}</span>`:""}</td>
-    <td class="n">${k>0&&pr>0?margenPill(m.pct)+`<span class="s">gana ${money(m.gan)} c/u</span>`:"—"}</td><td class="n">${rowBtns("prod","produccion",p.id)}</td></tr>`}).join("")
+  $("lProd").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Tostones</th><th class="n">Gasto</th><th class="n">Costo c/u</th><th class="n">Margen</th><th></th></tr></thead><tbody>${
+    L.map(p=>{const it=prodItems(p),k=num(p.costo),r=resumenProd(it,k);
+    return `<tr><td>${fdate(p.fecha)}</td><td>${it.map(x=>`${qty(x.cantidad)} × ${esc(nomTipo(x.tipoId))}${x.precio>0?` <span class="muted">a ${money(x.precio)}</span>`:""}`).join("<br>")}${it.length>1?`<span class="s">${qty(r.u)} unidades en total</span>`:""}${p.nota?`<span class="s">${esc(p.nota)}</span>`:""}</td>
+    <td class="n">${k>0?money(k):"—"}</td><td class="n">${k>0?money(r.cu):"—"}</td>
+    <td class="n">${k>0&&r.todosConPrecio?margenPill(r.pct)+`<span class="s">ganancia ${money(r.gan)}</span>`:"—"}</td><td class="n">${rowBtns("prod","produccion",p.id)}</td></tr>`}).join("")
   }</tbody></table>`:`<div class="empty">Aún no hay producción registrada.</div>`;
 }
 
@@ -450,7 +480,7 @@ function calcVenta(){
   const it=readItems();const t=it.reduce((a,x)=>a+x.cantidad*x.precio,0);const pg=pagadoAhora(t);
   $("veCalc").innerHTML=it.length?`<div class="t"><span>Total</span><span>${money(t)}</span></div><div><span>Pagó</span><span>${money(pg)}</span></div>${t-pg>0.004?`<div><span>Queda debiendo</span><b style="color:var(--warn)">${money(t-pg)}</b></div>`:""}`:`<div class="muted" style="display:block">Elige el tipo de tostón, la cantidad y el precio.</div>`;
 }
-function resetVenta(){$("veId").value="";$("veLines").innerHTML="";lineVenta();$("vePago").value="contado";$("vePagado").value="";$("vePagadoLbl").hidden=true;modoEditar("ve",false,"","Nueva venta");calcVenta()}
+function resetVenta(){if($("veId").value)$("veFecha").value=today();$("veId").value="";$("veLines").innerHTML="";lineVenta();$("vePago").value="contado";$("vePagado").value="";$("vePagadoLbl").hidden=true;modoEditar("ve",false,"","Nueva venta");calcVenta()}
 $("veCancel").onclick=resetVenta;
 EDIT.venta=id=>{const v=byId("ventas",id);if(!v)return;const t=totalVenta(v),pg=num(v.pagado);
   $("veId").value=v.id;$("veFecha").value=v.fecha||today();$("veCli").value=byId("clientes",v.clienteId)?v.clienteId:"";
@@ -533,8 +563,9 @@ function renderResumen(){
    <div class="kpi"><div class="l">Gastos de ${fmes(mes)}</div><div class="v">${money(gt)}</div><div class="h">${G.length} gastos</div></div>
    <div class="kpi"><div class="l">Ganancia aproximada</div><div class="v" style="color:${gan<0?"var(--bad)":"var(--good)"}">${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
    <div class="kpi"><div class="l">Te deben</div><div class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</div><div class="h">entre todos los clientes</div></div>`;
-  const ids=[...new Set([...S.tipos.map(t=>t.id),...P.map(p=>p.tipoId),...V.flatMap(v=>(v.items||[]).map(i=>i.tipoId))])];
-  const rows=ids.map(id=>{const pp=P.filter(p=>p.tipoId===id);const prod=pp.reduce((a,p)=>a+num(p.cantidad),0);
+  const PI=P.flatMap(prodItems);
+  const ids=[...new Set([...S.tipos.map(t=>t.id),...PI.map(p=>p.tipoId),...V.flatMap(v=>(v.items||[]).map(i=>i.tipoId))])];
+  const rows=ids.map(id=>{const pp=PI.filter(p=>p.tipoId===id);const prod=pp.reduce((a,p)=>a+num(p.cantidad),0);
     const conCosto=pp.filter(p=>num(p.costo)>0);const uC=conCosto.reduce((a,p)=>a+num(p.cantidad),0),kC=conCosto.reduce((a,p)=>a+num(p.costo),0);
     let cant=0,monto=0;V.forEach(v=>(v.items||[]).forEach(i=>{if(i.tipoId===id){cant+=num(i.cantidad);monto+=num(i.cantidad)*num(i.precio)}}));
     const cu=uC>0?kC/uC:0,pv=cant>0?monto/cant:num(byId("tipos",id)?.precio);
@@ -561,8 +592,8 @@ const r2=n=>Math.round(num(n)*100)/100;
 function libro(){
   const hojas={
     "Gastos":sortF(S.gastos).map(g=>({"Fecha":g.fecha,"Tipo":g.tipo,"Qué":g.descripcion,"Cantidad":num(g.cantidad)||"","Unidad":g.unidad||"","Total":r2(g.monto),"Proveedor":g.proveedor||""})),
-    "Producción":sortF(S.produccion).map(p=>{const k=num(p.costo),pr=num(p.precio)||num(byId("tipos",p.tipoId)?.precio),m=margenProd(num(p.cantidad),k,pr);
-      return {"Fecha":p.fecha,"Tipo de tostón":nomTipo(p.tipoId),"Unidades":num(p.cantidad),"Gasto":k?r2(k):"","Costo por unidad":k?r2(m.cu):"","Precio":pr?r2(pr):"","Margen %":k&&pr?Math.round(m.pct*10)/10:"","Nota":p.nota||""}}),
+    "Producción":sortF(S.produccion).flatMap(p=>{const it=prodItems(p),k=num(p.costo);
+      return it.map((x,i)=>{const m=margenProd(x.cantidad,x.costo,x.precio);return {"Fecha":p.fecha,"Tipo de tostón":nomTipo(x.tipoId),"Unidades":x.cantidad,"Costo por unidad":k?r2(m.cu):"","Precio":x.precio?r2(x.precio):"","Margen %":k&&x.precio?Math.round(m.pct*10)/10:"","Gasto de la producción":i===0&&k?r2(k):"","Nota":i===0?p.nota||"":""}})}),
     "Ventas":sortF(S.ventas).flatMap(v=>(v.items||[]).map((i,k)=>({"Fecha":v.fecha,"Cliente":nomCli(v.clienteId),"Tipo de tostón":nomTipo(i.tipoId),"Cantidad":num(i.cantidad),"Precio":r2(i.precio),"Total":r2(num(i.cantidad)*num(i.precio)),"Total venta":k===0?r2(totalVenta(v)):"","Pagó al vender":k===0?r2(v.pagado):""}))),
     "Pagos":sortF(S.pagos).map(p=>({"Fecha":p.fecha,"Cliente":nomCli(p.clienteId),"Monto":r2(p.monto)})),
     "Clientes":sortN(S.clientes).map(c=>({"Cliente":c.nombre,"Teléfono":c.telefono||"","Dirección / notas":c.direccion||"","Debe":r2(deuda(c))}))
