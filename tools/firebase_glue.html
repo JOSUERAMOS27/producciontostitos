@@ -20,7 +20,9 @@
   const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
   auth.getRedirectResult().catch(showErr);
   document.getElementById("loginBtn").onclick=()=>{msg.textContent="Abriendo Google…";
-    auth.signInWithPopup(provider).then(()=>{msg.textContent=""}).catch(e=>{
+    // Si el login no termina, casi siempre es la protección de rastreo del navegador bloqueando a Google
+    const slow=setTimeout(()=>{if(msg.textContent==="Abriendo Google…")msg.textContent="¿Se quedó esperando? Tu navegador puede estar bloqueando el inicio de sesión de Google. En Edge: toca el candado junto a la dirección, apaga \"Prevención de seguimiento\" para este sitio y recarga. También puedes usar Chrome."},20000);
+    auth.signInWithPopup(provider).then(()=>{clearTimeout(slow);if(msg.textContent==="Abriendo Google…")msg.textContent=""}).catch(e=>{clearTimeout(slow);
       // Si el navegador bloquea la ventana emergente (común en celulares), entra con redirección
       if(e&&["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].includes(e.code)){auth.signInWithRedirect(provider).catch(showErr);return}
       showErr(e)})};
