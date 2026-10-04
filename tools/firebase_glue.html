@@ -15,7 +15,15 @@
   firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth=firebase.auth(),fs=firebase.firestore();
   try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
-  document.getElementById("loginBtn").onclick=()=>{msg.textContent="";auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{msg.textContent="No se pudo entrar: "+(e.message||e.code)})};
+  const MSG={"auth/popup-closed-by-user":"Cerraste la ventana de Google antes de terminar. Intenta de nuevo.","auth/cancelled-popup-request":"","auth/unauthorized-domain":"Este sitio no está autorizado en Firebase (Authentication > Configuración > Dominios autorizados).","auth/operation-not-allowed":"El acceso con Google no está activado en Firebase (Authentication > Método de acceso).","auth/network-request-failed":"No hay conexión a internet. Revisa tu conexión e intenta de nuevo.","auth/internal-error":"Google no respondió. Intenta de nuevo."};
+  const showErr=e=>{const c=e&&e.code||"";msg.textContent=(c in MSG?MSG[c]:"No se pudo entrar ("+c+"). "+(e&&e.message||""))};
+  const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
+  auth.getRedirectResult().catch(showErr);
+  document.getElementById("loginBtn").onclick=()=>{msg.textContent="Abriendo Google…";
+    auth.signInWithPopup(provider).then(()=>{msg.textContent=""}).catch(e=>{
+      // Si el navegador bloquea la ventana emergente (común en celulares), entra con redirección
+      if(e&&["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].includes(e.code)){auth.signInWithRedirect(provider).catch(showErr);return}
+      showErr(e)})};
   document.getElementById("logoutBtn").onclick=()=>auth.signOut().then(()=>location.reload());
   let started=false;
   auth.onAuthStateChanged(u=>{

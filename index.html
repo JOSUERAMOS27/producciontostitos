@@ -111,7 +111,7 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
 .abono input{width:110px}
 .bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;min-width:60px}
 .bar span{display:block;height:100%;background:var(--gold)}
-@media (max-width:600px){#resTipos th:last-child,#resTipos td:last-child{display:none}}
+
 </style>
 <style>
 #login{min-height:100vh;display:grid;place-items:center;padding:16px}
@@ -213,6 +213,9 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
               <label for="pdTipo">Tipo de tostón<select id="pdTipo" required></select></label>
             </div>
             <label for="pdCant">Unidades producidas<input id="pdCant" type="number" step="any" min="0" required placeholder="120"></label>
+            <label for="pdCosto">Lo que gastaste en esta producción<input id="pdCosto" type="number" step="any" min="0" placeholder="Plátano, aceite, bolsas, gas, mano de obra…"></label>
+            <label for="pdPrecio">Precio de venta por unidad<input id="pdPrecio" type="number" step="any" min="0" placeholder="Se llena con el precio del tipo"></label>
+            <div class="calc" id="pdCalc"></div>
             <label for="pdNota">Nota<input id="pdNota" placeholder="Opcional"></label>
             <div class="btns"><button class="btn" type="submit">Guardar producción</button></div>
           </form>
@@ -302,7 +305,15 @@ td .s{display:block;color:var(--muted);font-size:12.5px}
   firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth=firebase.auth(),fs=firebase.firestore();
   try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
-  document.getElementById("loginBtn").onclick=()=>{msg.textContent="";auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{msg.textContent="No se pudo entrar: "+(e.message||e.code)})};
+  const MSG={"auth/popup-closed-by-user":"Cerraste la ventana de Google antes de terminar. Intenta de nuevo.","auth/cancelled-popup-request":"","auth/unauthorized-domain":"Este sitio no está autorizado en Firebase (Authentication > Configuración > Dominios autorizados).","auth/operation-not-allowed":"El acceso con Google no está activado en Firebase (Authentication > Método de acceso).","auth/network-request-failed":"No hay conexión a internet. Revisa tu conexión e intenta de nuevo.","auth/internal-error":"Google no respondió. Intenta de nuevo."};
+  const showErr=e=>{const c=e&&e.code||"";msg.textContent=(c in MSG?MSG[c]:"No se pudo entrar ("+c+"). "+(e&&e.message||""))};
+  const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
+  auth.getRedirectResult().catch(showErr);
+  document.getElementById("loginBtn").onclick=()=>{msg.textContent="Abriendo Google…";
+    auth.signInWithPopup(provider).then(()=>{msg.textContent=""}).catch(e=>{
+      // Si el navegador bloquea la ventana emergente (común en celulares), entra con redirección
+      if(e&&["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/web-storage-unsupported"].includes(e.code)){auth.signInWithRedirect(provider).catch(showErr);return}
+      showErr(e)})};
   document.getElementById("logoutBtn").onclick=()=>auth.signOut().then(()=>location.reload());
   let started=false;
   auth.onAuthStateChanged(u=>{
@@ -365,7 +376,7 @@ async function start(){
     S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     if(col==="ajustes"){const a=S.ajustes.find(x=>x.id==="general");MON=(a&&a.moneda)||"$";if(document.activeElement!==$("moneda"))$("moneda").value=MON}
     sched();
-  },()=>{const b=$("banner");b.hidden=false;b.innerHTML='<div class="note bad">Se perdió la conexión con los datos. Recarga la página.</div>'}));
+  },e=>{const b=$("banner");b.hidden=false;b.innerHTML=e&&e.code==="permission-denied"?'<div class="note bad">Entraste, pero este correo no tiene permiso para ver los datos. Revisa que sea el mismo correo que pusiste en las reglas de Firebase.</div>':'<div class="note bad">Se perdió la conexión con los datos. Recarga la página.</div>'}));
 }
 let rq=0;const sched=()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(renderAll)};
 $("moneda").addEventListener("change",async e=>{MON=e.target.value.trim()||"$";renderAll();if(db)try{await db.collection("ajustes").doc("general").set({moneda:MON})}catch(_){}});
@@ -417,10 +428,23 @@ $("fTipo").addEventListener("submit",async e=>{
 });
 document.addEventListener("click",e=>{const b=e.target.closest("[data-edit-tipo]");if(!b)return;const t=byId("tipos",b.dataset.editTipo);if(!t)return;
   $("tiId").value=t.id;$("tiNombre").value=t.nombre;$("tiPrecio").value=t.precio||"";$("tiTitle").textContent="Editar "+t.nombre;$("tiCancel").hidden=false;$("tiNombre").focus()});
+/* Margen de una producción: (precio − costo por unidad) / precio */
+function margenProd(cant,costo,precio){const cu=cant>0?costo/cant:0;return {cu,gan:precio-cu,pct:precio>0?(precio-cu)/precio*100:0,total:cant*precio-costo}}
+const pctTxt=n=>(Math.round(n*10)/10).toLocaleString("es",{maximumFractionDigits:1})+"%";
+const margenPill=p=>`<span class="pill ${p<0?"neg":p<20?"low":"ok"}">${pctTxt(p)}</span>`;
+function calcProd(){
+  const c=num($("pdCant").value),k=num($("pdCosto").value),pr=num($("pdPrecio").value);
+  if(!(c>0&&k>0)){$("pdCalc").innerHTML='<div class="muted" style="display:block">Escribe las unidades y lo que gastaste para ver el costo por unidad y tu margen.</div>';return}
+  const m=margenProd(c,k,pr);
+  $("pdCalc").innerHTML=`<div><span>Costo por unidad</span><b>${money(m.cu)}</b></div>${pr>0?`<div><span>Ganancia por unidad</span><b>${money(m.gan)}</b></div>
+   <div><span>Margen de ganancia</span>${margenPill(m.pct)}</div><div class="t"><span>Si vendes todo ganas</span><span>${money(m.total)}</span></div>`:'<div class="muted" style="display:block">Pon el precio de venta para ver tu margen.</div>'}`;
+}
+["pdCant","pdCosto","pdPrecio"].forEach(id=>$(id).addEventListener("input",calcProd));
+$("pdTipo").addEventListener("change",()=>{const t=byId("tipos",$("pdTipo").value);if(t&&t.precio)$("pdPrecio").value=t.precio;calcProd()});
 $("fProd").addEventListener("submit",async e=>{
-  e.preventDefault();const d={fecha:$("pdFecha").value||today(),tipoId:$("pdTipo").value,cantidad:num($("pdCant").value),nota:$("pdNota").value.trim(),creado:Date.now()};
+  e.preventDefault();const d={fecha:$("pdFecha").value||today(),tipoId:$("pdTipo").value,cantidad:num($("pdCant").value),costo:num($("pdCosto").value),precio:num($("pdPrecio").value),nota:$("pdNota").value.trim(),creado:Date.now()};
   if(!d.tipoId||d.cantidad<=0){toast("Elige el tipo de tostón y la cantidad");return}
-  if(await save("produccion",null,d)){toast("Producción guardada");$("pdCant").value="";$("pdNota").value=""}
+  if(await save("produccion",null,d)){toast("Producción guardada");["pdCant","pdCosto","pdNota"].forEach(id=>$(id).value="");calcProd()}
 });
 function renderProduccion(){
   const T=sortN(S.tipos);fill($("pdTipo"),T,T.length?"Elige…":"Primero agrega un tipo abajo");
@@ -428,8 +452,12 @@ function renderProduccion(){
     <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-tipo="${esc(t.id)}">Editar</button>${delBtn("tipos",t.id)}</span></td></tr>`).join("")}</tbody></table>`
     :`<div class="empty">Agrega tus tipos de tostón: clásico, con ajo, picante…</div>`;
   const L=sortF(S.produccion).slice(0,100);
-  $("lProd").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Tipo de tostón</th><th class="n">Unidades</th><th></th></tr></thead><tbody>${
-    L.map(p=>`<tr><td>${fdate(p.fecha)}</td><td>${esc(nomTipo(p.tipoId))}${p.nota?`<span class="s">${esc(p.nota)}</span>`:""}</td><td class="n">${qty(p.cantidad)}</td><td class="n">${delBtn("produccion",p.id)}</td></tr>`).join("")
+  calcProd();
+  $("lProd").innerHTML=L.length?`<table><thead><tr><th>Fecha</th><th>Tipo de tostón</th><th class="n">Unidades</th><th class="n">Gasto</th><th class="n">Costo c/u</th><th class="n">Margen</th><th></th></tr></thead><tbody>${
+    L.map(p=>{const k=num(p.costo),pr=num(p.precio)||num(byId("tipos",p.tipoId)?.precio);const m=margenProd(num(p.cantidad),k,pr);
+    return `<tr><td>${fdate(p.fecha)}</td><td>${esc(nomTipo(p.tipoId))}${p.nota?`<span class="s">${esc(p.nota)}</span>`:""}</td><td class="n">${qty(p.cantidad)}</td>
+    <td class="n">${k>0?money(k):"—"}</td><td class="n">${k>0?money(m.cu):"—"}${k>0&&pr>0?`<span class="s">vende a ${money(pr)}</span>`:""}</td>
+    <td class="n">${k>0&&pr>0?margenPill(m.pct)+`<span class="s">gana ${money(m.gan)} c/u</span>`:"—"}</td><td class="n">${delBtn("produccion",p.id)}</td></tr>`}).join("")
   }</tbody></table>`:`<div class="empty">Aún no hay producción registrada.</div>`;
 }
 
@@ -515,12 +543,14 @@ function renderResumen(){
    <div class="kpi"><div class="l">Ganancia aproximada</div><div class="v" style="color:${gan<0?"var(--bad)":"var(--good)"}">${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
    <div class="kpi"><div class="l">Te deben</div><div class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</div><div class="h">entre todos los clientes</div></div>`;
   const ids=[...new Set([...S.tipos.map(t=>t.id),...P.map(p=>p.tipoId),...V.flatMap(v=>(v.items||[]).map(i=>i.tipoId))])];
-  const rows=ids.map(id=>{const prod=P.filter(p=>p.tipoId===id).reduce((a,p)=>a+num(p.cantidad),0);
+  const rows=ids.map(id=>{const pp=P.filter(p=>p.tipoId===id);const prod=pp.reduce((a,p)=>a+num(p.cantidad),0);
+    const conCosto=pp.filter(p=>num(p.costo)>0);const uC=conCosto.reduce((a,p)=>a+num(p.cantidad),0),kC=conCosto.reduce((a,p)=>a+num(p.costo),0);
     let cant=0,monto=0;V.forEach(v=>(v.items||[]).forEach(i=>{if(i.tipoId===id){cant+=num(i.cantidad);monto+=num(i.cantidad)*num(i.precio)}}));
-    return {id,prod,cant,monto}}).filter(r=>r.prod||r.cant||byId("tipos",r.id)).sort((a,b)=>b.monto-a.monto);
-  const max=Math.max(...rows.map(r=>r.monto),0);
-  $("resTipos").innerHTML=rows.length?`<table><thead><tr><th>Tipo</th><th class="n">Producidas</th><th class="n">Vendidas</th><th class="n">Vendido</th><th style="width:22%"></th></tr></thead><tbody>${
-    rows.map(r=>`<tr><td>${esc(nomTipo(r.id))}</td><td class="n">${qty(r.prod)}</td><td class="n">${qty(r.cant)}</td><td class="n">${money(r.monto)}</td><td><div class="bar"><span style="width:${max>0?r.monto/max*100:0}%"></span></div></td></tr>`).join("")
+    const cu=uC>0?kC/uC:0,pv=cant>0?monto/cant:num(byId("tipos",id)?.precio);
+    return {id,prod,cant,monto,cu,pv,pct:cu>0&&pv>0?(pv-cu)/pv*100:null}}).filter(r=>r.prod||r.cant||byId("tipos",r.id)).sort((a,b)=>b.monto-a.monto);
+  $("resTipos").innerHTML=rows.length?`<table><thead><tr><th>Tipo</th><th class="n">Producidas</th><th class="n">Vendidas</th><th class="n">Vendido</th><th class="n">Costo c/u</th><th class="n">Margen</th></tr></thead><tbody>${
+    rows.map(r=>`<tr><td>${esc(nomTipo(r.id))}</td><td class="n">${qty(r.prod)}</td><td class="n">${qty(r.cant)}</td><td class="n">${money(r.monto)}</td>
+    <td class="n">${r.cu>0?money(r.cu):"—"}</td><td class="n">${r.pct==null?"—":margenPill(r.pct)+`<span class="s">a ${money(r.pv)} c/u</span>`}</td></tr>`).join("")
   }</tbody></table>`:`<div class="muted">Agrega tus tipos de tostón en la pestaña Producción.</div>`;
   const D=S.clientes.map(c=>({c,d:deuda(c)})).filter(x=>x.d>0.004).sort((a,b)=>b.d-a.d);
   $("resDeben").innerHTML=D.length?`<table><tbody>${D.map(({c,d})=>`<tr><td>${esc(c.nombre)}</td><td class="n"><b style="color:var(--warn)">${money(d)}</b></td></tr>`).join("")}</tbody></table>`:`<div class="muted">Nadie te debe ahora mismo.</div>`;
@@ -540,7 +570,8 @@ const r2=n=>Math.round(num(n)*100)/100;
 function libro(){
   const hojas={
     "Gastos":sortF(S.gastos).map(g=>({"Fecha":g.fecha,"Tipo":g.tipo,"Qué":g.descripcion,"Cantidad":num(g.cantidad)||"","Unidad":g.unidad||"","Total":r2(g.monto),"Proveedor":g.proveedor||""})),
-    "Producción":sortF(S.produccion).map(p=>({"Fecha":p.fecha,"Tipo de tostón":nomTipo(p.tipoId),"Unidades":num(p.cantidad),"Nota":p.nota||""})),
+    "Producción":sortF(S.produccion).map(p=>{const k=num(p.costo),pr=num(p.precio)||num(byId("tipos",p.tipoId)?.precio),m=margenProd(num(p.cantidad),k,pr);
+      return {"Fecha":p.fecha,"Tipo de tostón":nomTipo(p.tipoId),"Unidades":num(p.cantidad),"Gasto":k?r2(k):"","Costo por unidad":k?r2(m.cu):"","Precio":pr?r2(pr):"","Margen %":k&&pr?Math.round(m.pct*10)/10:"","Nota":p.nota||""}}),
     "Ventas":sortF(S.ventas).flatMap(v=>(v.items||[]).map((i,k)=>({"Fecha":v.fecha,"Cliente":nomCli(v.clienteId),"Tipo de tostón":nomTipo(i.tipoId),"Cantidad":num(i.cantidad),"Precio":r2(i.precio),"Total":r2(num(i.cantidad)*num(i.precio)),"Total venta":k===0?r2(totalVenta(v)):"","Pagó al vender":k===0?r2(v.pagado):""}))),
     "Pagos":sortF(S.pagos).map(p=>({"Fecha":p.fecha,"Cliente":nomCli(p.clienteId),"Monto":r2(p.monto)})),
     "Clientes":sortN(S.clientes).map(c=>({"Cliente":c.nombre,"Teléfono":c.telefono||"","Dirección / notas":c.direccion||"","Debe":r2(deuda(c))}))
