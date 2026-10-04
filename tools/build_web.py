@@ -6,6 +6,10 @@ head, rest = s.split('<header class="top">', 1)
 headpart = head[:head.index('</style>') + len('</style>')]
 extra_css = '''
 <style>
+[hidden]{display:none!important}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 #login{min-height:100vh;display:grid;place-items:center;padding:16px}
 #login .card{max-width:380px;width:100%;display:grid;gap:14px;text-align:center}
 #login h1{font-family:var(--display);font-size:30px;margin:0}
