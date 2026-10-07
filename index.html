@@ -66,6 +66,8 @@ section.tab{padding-top:0}
 h2{font-family:var(--display);font-weight:800;font-size:36px;letter-spacing:-.03em;line-height:1.05;margin:0 0 6px;text-wrap:balance}
 h3{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:-.01em;color:var(--fg);margin:0 0 12px}
 .lead{color:var(--muted);margin:0 0 22px;max-width:70ch;font-size:16px}
+.stack{display:grid;gap:24px;grid-template-columns:minmax(0,1fr);min-width:0}
+.cols>*{min-width:0}
 .cols{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:24px;align-items:start}
 @media (max-width:1320px){.cols{grid-template-columns:minmax(0,1fr)}.cols>:first-child{max-width:680px;width:100%}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
@@ -92,7 +94,7 @@ tr:last-child>td{border-bottom:0}
 td.n,th.n{text-align:right;white-space:nowrap}
 td{min-width:0}td:nth-child(2){min-width:9em}
 td .s{display:block;color:var(--muted);font-size:13px;margin-top:2px}
-.pill{display:inline-block;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--sunk);color:var(--muted);vertical-align:middle}
+.pill{white-space:nowrap;display:inline-block;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--sunk);color:var(--muted);vertical-align:middle}
 .pill.ok{background:var(--good-bg);color:var(--good)}
 .pill.low{background:var(--warn-bg);color:var(--warn)}
 .pill.neg{background:var(--bad-bg);color:var(--bad)}
@@ -110,6 +112,7 @@ button.kpi span{display:block}
 button.kpi:hover{border-color:var(--leaf);box-shadow:0 2px 0 var(--leaf)}
 .kpi.hi{background:var(--gold);border-color:transparent;color:var(--gold-ink)}
 .kpi.hi .l,.kpi.hi .h{color:var(--gold-ink)}
+.kpi.hi .v.neg{color:#8f1d16}
 .mes{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
 .mes label{display:flex;align-items:center;gap:8px;color:var(--muted)}
 .mes input{width:auto;background:var(--surface)}
@@ -136,6 +139,7 @@ button.kpi:hover{border-color:var(--leaf);box-shadow:0 2px 0 var(--leaf)}
 .line.p{grid-template-columns:minmax(0,1fr) 90px 52px 44px}
 .line .u{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .line input{text-align:right;padding:0 10px}
+.line select{padding:0 10px}
 .x{border:0;background:var(--sunk);color:var(--muted);border-radius:10px;height:44px;cursor:pointer;font-size:18px}
 #pdAdd,#veAdd{border:1px dashed var(--field-line);background:transparent;color:var(--fg)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:99px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
@@ -151,6 +155,56 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
 .pill.pag{background:var(--good-bg);color:var(--good)}
 .abono{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .abono input{width:110px;min-height:36px}
+
+
+/* ----- celular: cada fila de las listas se ve como una tarjeta ----- */
+@media (max-width:820px){
+  .cards thead{display:none}
+  .cards table,.cards tbody{display:block}
+  .cards tr{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px 18px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .cards tr:last-child{border-bottom:0}
+  .cards td{display:block;padding:0;border:0;text-align:left!important;white-space:normal;min-width:0!important;order:5}
+  .cards td::before{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+  .cards td .btns,.cards .abono{justify-content:flex-start!important}
+  .cards .abono input{flex:1 1 120px;width:auto;min-height:44px}
+  .cards .abono .btn,.cards td .btns .btn{min-height:44px}
+  .cards td[colspan]{flex-basis:100%}
+  #lGastos td:nth-child(3){order:1;flex:1 1 100%;font-size:16px}
+  #lGastos td:nth-child(2){order:3;}#lGastos td:nth-child(2)::before{content:"Fecha"}
+  #lGastos td:nth-child(4){order:5;}#lGastos td:nth-child(4)::before{content:"Cantidad"}
+  #lGastos td:nth-child(5){order:6;}#lGastos td:nth-child(5)::before{content:"Total"}
+  #lGastos td:nth-child(6){order:20;flex-basis:100%}
+  #lGastos td:nth-child(1){order:0;flex:0 0 auto;width:auto;padding-top:2px}#lGastos td:nth-child(3){flex:1 1 calc(100% - 50px)}
+  #lLotes td:nth-child(1){order:1;flex:1 1 100%;font-size:16px}
+  #lLotes td:nth-child(2){order:3;}#lLotes td:nth-child(2)::before{content:"Gastos"}
+  #lLotes td:nth-child(3){order:4;}#lLotes td:nth-child(3)::before{content:"Total"}
+  #lLotes td:nth-child(4){order:5;}#lLotes td:nth-child(4)::before{content:"Producción"}
+  #lProd td:nth-child(2){order:1;flex:1 1 100%;font-size:16px}
+  #lProd td:nth-child(1){order:2;}#lProd td:nth-child(1)::before{content:"Fecha"}
+  #lProd td:nth-child(3){order:4;}#lProd td:nth-child(3)::before{content:"Gasto"}
+  #lProd td:nth-child(4){order:5;}#lProd td:nth-child(4)::before{content:"Costo c/u"}
+  #lProd td:nth-child(5){order:6;}#lProd td:nth-child(5)::before{content:"Margen"}
+  #lProd td:nth-child(6){order:20;flex-basis:100%}
+  #lVentas td:nth-child(2){order:1;flex:1 1 100%;font-size:16px}
+  #lVentas td:nth-child(1){order:2;}#lVentas td:nth-child(1)::before{content:"Fecha"}
+  #lVentas td:nth-child(3){order:4; flex-basis:100%;}#lVentas td:nth-child(3)::before{content:"Detalle"}
+  #lVentas td:nth-child(4){order:5;}#lVentas td:nth-child(4)::before{content:"Total"}
+  #lVentas td:nth-child(5){order:20;flex-basis:100%}
+  #lCli td:nth-child(1){order:1;flex:1 1 100%;font-size:16px}
+  #lCli td:nth-child(2){order:3;}#lCli td:nth-child(2)::before{content:"Debe"}
+  #lCli td:nth-child(3){order:4; flex-basis:100%;}#lCli td:nth-child(3)::before{content:"Registrar pago"}
+  #lCli td:nth-child(4){order:20;flex-basis:100%}
+  #lPagos td:nth-child(2){order:1;flex:1 1 100%;font-size:16px}
+  #lPagos td:nth-child(1){order:2;}#lPagos td:nth-child(1)::before{content:"Fecha"}
+  #lPagos td:nth-child(3){order:4;}#lPagos td:nth-child(3)::before{content:"Monto"}
+  #lPagos td:nth-child(4){order:20;flex-basis:100%}
+  #resTipos td:nth-child(1){order:1;flex:1 1 100%;font-size:16px}
+  #resTipos td:nth-child(2){order:3;}#resTipos td:nth-child(2)::before{content:"Producidas"}
+  #resTipos td:nth-child(3){order:4;}#resTipos td:nth-child(3)::before{content:"Vendidas"}
+  #resTipos td:nth-child(4){order:5;}#resTipos td:nth-child(4)::before{content:"Vendido"}
+  #resTipos td:nth-child(5){order:6;}#resTipos td:nth-child(5)::before{content:"Costo c/u"}
+  #resTipos td:nth-child(6){order:7;}#resTipos td:nth-child(6)::before{content:"Margen"}
+}
 
 /* ----- celular: barra arriba y pestañas abajo ----- */
 @media (max-width:820px){
@@ -172,7 +226,10 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .kpi{padding:14px}
   .kpi .v{font-size:26px}
-  .line.v{grid-template-columns:minmax(0,1fr) 62px 72px 40px;gap:6px}
+  .line.v{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:8px}
+  .line.v select{grid-column:1/-1}
+  .lines .line.v+.line.v{border-top:1px dashed var(--line);padding-top:8px}
+  #fVenta .row2{grid-template-columns:minmax(0,1fr)}
   .row2{gap:10px}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 }
@@ -228,7 +285,7 @@ img{max-width:100%}
     <div class="mes"><h2 style="margin:0">Resumen del mes</h2><label for="mesSel">Mes <input id="mesSel" type="month"></label></div>
     <div class="kpis" id="kpis"></div>
     <div class="grid2">
-      <div class="card" style="min-width:0"><h3>Por tipo de tostón</h3><div class="tablebox" id="resTipos"></div></div>
+      <div class="card" style="min-width:0"><h3>Por tipo de tostón</h3><div class="tablebox cards" id="resTipos"></div></div>
       <div class="card" style="min-width:0"><h3>Clientes que deben</h3><div class="tablebox" id="resDeben"></div></div>
     </div>
     <div class="card" style="margin-top:20px;min-width:0"><h3>Gastos del mes por tipo</h3><div class="tablebox" id="resGastos"></div></div>
@@ -273,10 +330,10 @@ img{max-width:100%}
       <div class="card" style="min-width:0">
         <h3>Grupos de gastos</h3>
         <p class="muted" style="margin:0 0 8px;font-size:13px">Marca los gastos de una misma producción y agrúpalos con un código. Luego eliges ese código al registrar la producción.</p>
-        <div class="tablebox" id="lLotes" style="margin-bottom:16px"></div>
+        <div class="tablebox cards" id="lLotes" style="margin-bottom:16px"></div>
         <h3>Gastos registrados</h3>
         <div class="selbar" id="gaSelBar" hidden></div>
-        <div class="tablebox" id="lGastos"></div>
+        <div class="tablebox cards" id="lGastos"></div>
       </div>
     </div>
   </section>
@@ -286,7 +343,7 @@ img{max-width:100%}
     <h2>Producción</h2>
     <p class="lead">Anota cuántas unidades de cada tipo de tostón hiciste cada día.</p>
     <div class="cols">
-      <div style="display:grid;gap:20px">
+      <div class="stack">
         <div class="card">
           <h3 id="pdTitle">Registrar producción</h3>
           <form id="fProd">
@@ -315,7 +372,7 @@ img{max-width:100%}
           <div class="tablebox" id="lTipos" style="margin-top:12px"></div>
         </div>
       </div>
-      <div class="card" style="min-width:0"><h3>Producción registrada</h3><div class="tablebox" id="lProd"></div></div>
+      <div class="card" style="min-width:0"><h3>Producción registrada</h3><div class="tablebox cards" id="lProd"></div></div>
     </div>
   </section>
 
@@ -345,7 +402,7 @@ img{max-width:100%}
           <div class="btns"><button class="btn" type="submit" id="veSave">Guardar venta</button><button class="btn ghost" type="button" id="veCancel" hidden>Cancelar</button></div>
         </form>
       </div>
-      <div class="card" style="min-width:0"><h3>Ventas registradas</h3><div class="tablebox" id="lVentas"></div></div>
+      <div class="card" style="min-width:0"><h3>Ventas registradas</h3><div class="tablebox cards" id="lVentas"></div></div>
     </div>
   </section>
 
@@ -364,9 +421,9 @@ img{max-width:100%}
           <div class="btns"><button class="btn" type="submit">Guardar cliente</button><button class="btn ghost" type="button" id="clCancel" hidden>Cancelar</button></div>
         </form>
       </div>
-      <div style="display:grid;gap:20px;min-width:0">
-        <div class="card"><h3>Clientes</h3><div class="tablebox" id="lCli"></div></div>
-        <div class="card"><h3>Pagos recibidos</h3><div class="tablebox" id="lPagos"></div></div>
+      <div class="stack">
+        <div class="card"><h3>Clientes</h3><div class="tablebox cards" id="lCli"></div></div>
+        <div class="card"><h3>Pagos recibidos</h3><div class="tablebox cards" id="lPagos"></div></div>
       </div>
     </div>
   </section>
@@ -743,7 +800,7 @@ function renderResumen(){
   $("kpis").innerHTML=`
    <button type="button" class="kpi go" data-go="ventas" aria-label="Ventas de ${fmes(mes)}: ${money(vt)}. Ver ventas"><span class="l">Ventas de ${fmes(mes)}</span><span class="v">${money(vt)}</span><span class="h">${V.length} ventas · cobrado ${money(cobrado)} · <u>ver</u> →</span></button>
    <button type="button" class="kpi go" data-go="gastos" aria-label="Gastos de ${fmes(mes)}: ${money(gt)}. Ver gastos"><span class="l">Gastos de ${fmes(mes)}</span><span class="v">${money(gt)}</span><span class="h">${G.length} gastos · <u>ver</u> →</span></button>
-   <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v"${gan<0?' style="color:var(--bad)"':""}>${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
+   <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v${gan<0?" neg":""}">${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
    <button type="button" class="kpi go" data-go="clientes" aria-label="Te deben ${money(porCobrar)}. Ver clientes y deudas"><span class="l">Te deben</span><span class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</span><span class="h">${nDeben?nDeben+" cliente"+(nDeben>1?"s":""):"nadie te debe"} · <u>ver quién</u> →</span></button>`;
   const PI=P.flatMap(prodItems);
   const ids=[...new Set([...S.tipos.map(t=>t.id),...PI.map(p=>p.tipoId),...V.flatMap(v=>(v.items||[]).map(i=>i.tipoId))])];
