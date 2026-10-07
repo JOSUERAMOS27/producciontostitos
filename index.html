@@ -741,8 +741,8 @@ function renderResumen(){
   const porCobrar=S.clientes.reduce((a,c)=>a+Math.max(deuda(c),0),0),nDeben=S.clientes.filter(c=>deuda(c)>0.004).length;
   const gan=vt-gt;
   $("kpis").innerHTML=`
-   <div class="kpi"><div class="l">Ventas de ${fmes(mes)}</div><div class="v">${money(vt)}</div><div class="h">${V.length} ventas · cobrado ${money(cobrado)}</div></div>
-   <div class="kpi"><div class="l">Gastos de ${fmes(mes)}</div><div class="v">${money(gt)}</div><div class="h">${G.length} gastos</div></div>
+   <button type="button" class="kpi go" data-go="ventas" aria-label="Ventas de ${fmes(mes)}: ${money(vt)}. Ver ventas"><span class="l">Ventas de ${fmes(mes)}</span><span class="v">${money(vt)}</span><span class="h">${V.length} ventas · cobrado ${money(cobrado)} · <u>ver</u> →</span></button>
+   <button type="button" class="kpi go" data-go="gastos" aria-label="Gastos de ${fmes(mes)}: ${money(gt)}. Ver gastos"><span class="l">Gastos de ${fmes(mes)}</span><span class="v">${money(gt)}</span><span class="h">${G.length} gastos · <u>ver</u> →</span></button>
    <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v"${gan<0?' style="color:var(--bad)"':""}>${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
    <button type="button" class="kpi go" data-go="clientes" aria-label="Te deben ${money(porCobrar)}. Ver clientes y deudas"><span class="l">Te deben</span><span class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</span><span class="h">${nDeben?nDeben+" cliente"+(nDeben>1?"s":""):"nadie te debe"} · <u>ver quién</u> →</span></button>`;
   const PI=P.flatMap(prodItems);
