@@ -100,6 +100,9 @@ td .s{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .kpi .l{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .kpi .v{font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
 .kpi .h{font-size:13px;color:var(--muted)}
+button.kpi{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;justify-content:flex-start}
+button.kpi span{display:block}
+button.kpi:hover{border-color:var(--leaf);box-shadow:0 2px 0 var(--leaf)}
 .kpi.hi{background:var(--gold);border-color:transparent;color:var(--gold-ink)}
 .kpi.hi .l,.kpi.hi .h{color:var(--gold-ink)}
 .mes{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
@@ -411,6 +414,7 @@ let rq=0;const sched=()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(rend
 $("moneda").addEventListener("change",async e=>{MON=e.target.value.trim()||"$";renderAll();if(db)try{await db.collection("ajustes").doc("general").set({moneda:MON})}catch(_){}});
 
 /* ---------- pestañas ---------- */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;showTab(b.dataset.go);window.scrollTo(0,0)});
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(b)showTab(b.dataset.t)});
 function showTab(t){
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t?"true":"false"));
@@ -667,13 +671,13 @@ function renderResumen(){
   const G=S.gastos.filter(enMes),V=S.ventas.filter(enMes),P=S.produccion.filter(enMes);
   const gt=G.reduce((a,g)=>a+num(g.monto),0),vt=V.reduce((a,v)=>a+totalVenta(v),0);
   const cobrado=V.reduce((a,v)=>a+num(v.pagado),0)+S.pagos.filter(enMes).reduce((a,p)=>a+num(p.monto),0);
-  const porCobrar=S.clientes.reduce((a,c)=>a+Math.max(deuda(c),0),0);
+  const porCobrar=S.clientes.reduce((a,c)=>a+Math.max(deuda(c),0),0),nDeben=S.clientes.filter(c=>deuda(c)>0.004).length;
   const gan=vt-gt;
   $("kpis").innerHTML=`
    <div class="kpi"><div class="l">Ventas de ${fmes(mes)}</div><div class="v">${money(vt)}</div><div class="h">${V.length} ventas · cobrado ${money(cobrado)}</div></div>
    <div class="kpi"><div class="l">Gastos de ${fmes(mes)}</div><div class="v">${money(gt)}</div><div class="h">${G.length} gastos</div></div>
    <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v"${gan<0?' style="color:var(--bad)"':""}>${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
-   <div class="kpi"><div class="l">Te deben</div><div class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</div><div class="h">entre todos los clientes</div></div>`;
+   <button type="button" class="kpi go" data-go="clientes" aria-label="Te deben ${money(porCobrar)}. Ver clientes y deudas"><span class="l">Te deben</span><span class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</span><span class="h">${nDeben?nDeben+" cliente"+(nDeben>1?"s":""):"nadie te debe"} · <u>ver quién</u> →</span></button>`;
   const PI=P.flatMap(prodItems);
   const ids=[...new Set([...S.tipos.map(t=>t.id),...PI.map(p=>p.tipoId),...V.flatMap(v=>(v.items||[]).map(i=>i.tipoId))])];
   const rows=ids.map(id=>{const pp=PI.filter(p=>p.tipoId===id);const prod=pp.reduce((a,p)=>a+num(p.cantidad),0);
