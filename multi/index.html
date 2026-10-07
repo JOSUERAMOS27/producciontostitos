@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tostones Multi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<!-- ======== Entrar ======== -->
+<div id="login" hidden>
+  <div class="card">
+    <h1>Tostones Multi</h1>
+    <p class="muted center" id="loginSub" style="margin:0">Entra con tu correo y contraseña.</p>
+    <form id="fLogin">
+      <label>Correo<input type="email" id="lgEmail" autocomplete="email" required></label>
+      <label id="lgPassBox">Contraseña<input type="password" id="lgPass" autocomplete="current-password" minlength="6" required></label>
+      <div class="btns"><button class="btn" type="submit" id="lgBtn">Entrar</button></div>
+      <div class="msg" id="lgMsg" role="status"></div>
+    </form>
+    <div class="center">
+      <button class="linkbtn" type="button" id="lgModo">¿No tienes cuenta? Crear una</button><br>
+      <button class="linkbtn" type="button" id="lgOlvide">Olvidé mi contraseña</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== Nueva contraseña (al volver del correo de recuperación) ======== -->
+<div id="recuperar" hidden style="min-height:100vh;display:grid;place-items:center;padding:16px">
+  <div class="card" style="max-width:400px;width:100%">
+    <form id="fRecuperar">
+      <h3>Escribe tu nueva contraseña</h3>
+      <label>Nueva contraseña<input type="password" id="rcPass" autocomplete="new-password" minlength="6" required></label>
+      <div class="btns"><button class="btn" type="submit">Guardar contraseña</button></div>
+      <div class="msg" id="rcMsg" role="status"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ======== Primera empresa ======== -->
+<div id="nueva" hidden>
+  <div class="card">
+    <h1>Crea tu fábrica</h1>
+    <p class="muted center" style="margin:0">Cada fábrica tiene sus propios datos. Si alguien te invitó, pídele que use tu correo <b id="nvEmail"></b> y vuelve a entrar.</p>
+    <form id="fNueva">
+      <label>Nombre de la fábrica<input id="nvNombre" required maxlength="80" placeholder="Ej. Tostones Doña Ana"></label>
+      <label>Moneda<input id="nvMoneda" maxlength="4" value="RD$"></label>
+      <div class="btns"><button class="btn" type="submit">Crear fábrica</button></div>
+      <div class="msg" id="nvMsg" role="status"></div>
+    </form>
+    <div class="center"><button class="linkbtn" type="button" id="nvSalir">Salir</button></div>
+  </div>
+</div>
+
+<!-- ======== Aplicación ======== -->
+<div id="app" hidden>
+<header class="top">
+  <div class="wrap" style="padding-block:0">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="var(--gold)"/><circle cx="20" cy="20" r="11" fill="none" stroke="#1e3a2a" stroke-width="2.5" stroke-dasharray="3 3"/><circle cx="20" cy="20" r="4" fill="#1e3a2a"/></svg>
+      <div>
+        <h1 id="brandName">Tostones</h1>
+        <div class="sub">Gastos, producción, ventas y cuentas por cobrar</div>
+      </div>
+      <div class="sp"></div>
+      <label class="empsel" for="empSel">Fábrica<select id="empSel"></select></label>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-t="resumen" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/></svg>Resumen</button>
+      <button role="tab" data-t="gastos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Gastos</button>
+      <button role="tab" data-t="produccion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18M5 20V10l5 3v-3l5 3V6l4 2v12"/></svg>Producción</button>
+      <button role="tab" data-t="ventas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12l-1 18H7L6 3zM9 8h6"/></svg>Ventas</button>
+      <button role="tab" data-t="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c1.8.8 3 2.7 3 5"/></svg><span>Clientes<span class="lg"> y deudas</span></span></button>
+      <button role="tab" data-t="empresa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6"/></svg>Fábrica</button>
+    </nav>
+    <div class="userbox"><span id="who"></span><button class="btn sm ghost" id="logoutBtn" type="button">Salir</button></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ---------- RESUMEN ---------- -->
+<section class="tab" id="t-resumen">
+  <div class="mes">
+    <h2 style="margin:0">Resumen del mes</h2>
+    <label for="mesSel">Mes <input type="month" id="mesSel"></label>
+  </div>
+  <div id="avisos"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid2">
+    <div class="stack">
+      <div class="card cards"><h3>Por tipo de tostón</h3><div class="tablebox" id="resTipos"></div></div>
+      <div class="card cards"><h3>Existencias</h3><p class="muted" style="margin:-6px 0 10px;font-size:14px">Todo lo producido menos todo lo vendido.</p><div class="tablebox" id="lInv"></div></div>
+    </div>
+    <div class="stack">
+      <div class="card"><h3>Clientes que deben</h3><div class="tablebox" id="resDeben"></div></div>
+      <div class="card"><h3>Gastos del mes por tipo</h3><div class="tablebox" id="resGastos"></div></div>
+      <div class="card"><p style="margin:0 0 12px"><b>Tus datos en Excel.</b> Gastos, producción, ventas, pagos y deudas en un solo archivo.</p>
+        <button class="btn" type="button" id="xlBtn">Descargar en Excel</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- GASTOS ---------- -->
+<section class="tab" id="t-gastos" hidden>
+  <h2>Gastos</h2>
+  <p class="lead">Anota cada compra de materia prima (plátano, aceite, bolsas, saborizantes) y los gastos de producción (gas, luz, mano de obra).</p>
+  <div class="cols">
+    <div class="card">
+      <form id="fGasto">
+        <h3 id="gaTitulo">Nuevo gasto</h3>
+        <input type="hidden" id="gaId">
+        <div class="row2">
+          <label>Fecha<input type="date" id="gaFecha" required></label>
+          <label>Tipo de gasto<select id="gaTipo"><option>Materia prima</option><option>Producción</option><option>Otro</option></select></label>
+        </div>
+        <label>Qué compraste<input id="gaDesc" required list="gaDescs" placeholder="Ej. Plátano verde"><datalist id="gaDescs"></datalist></label>
+        <div class="row2">
+          <label>Cantidad<input type="number" step="any" min="0" id="gaCant"></label>
+          <label>Unidad<select id="gaUnidad"><option value="">—</option><option>kg</option><option>cesta</option><option>litro</option><option>galón</option><option>unidad</option><option>ciento</option><option>millar</option><option>g</option><option>lb</option><option>saco</option><option>caja</option></select></label>
+        </div>
+        <div class="row2">
+          <label>Total pagado<input type="number" step="any" min="0" id="gaMonto" required></label>
+          <label>Proveedor<input id="gaProv" list="gaProvs"><datalist id="gaProvs"></datalist></label>
+        </div>
+        <label>Código de grupo<input id="gaGrupo" list="gaGrupos" maxlength="20" placeholder="Ej. L1 (opcional)"><datalist id="gaGrupos"></datalist></label>
+        <div class="calc" id="gaCalc" hidden></div>
+        <div class="btns"><button class="btn" type="submit">Guardar gasto</button><button class="btn ghost" type="button" id="gaCancel" hidden>Cancelar y hacer un nuevo</button></div>
+      </form>
+    </div>
+    <div class="stack">
+      <div class="card cards"><h3>Grupos de gastos</h3>
+        <p class="muted" style="margin:-6px 0 10px;font-size:14px">Marca los gastos de una misma producción y agrúpalos con un código. Luego eliges ese código al registrar la producción.</p>
+        <div class="tablebox" id="lLotes"></div></div>
+      <div class="card cards"><h3>Gastos registrados</h3>
+        <div class="selbar" id="gaSelBar" hidden><span id="gaSelN"></span>
+          <input id="gaSelCod" maxlength="20" placeholder="Código" style="width:110px;min-height:36px" list="gaGrupos">
+          <button class="btn sm" type="button" id="gaSelAsig">Agrupar</button>
+          <button class="btn sm ghost" type="button" id="gaSelQuitar">Quitar grupo</button></div>
+        <div class="tablebox" id="lGastos"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- PRODUCCIÓN ---------- -->
+<section class="tab" id="t-produccion" hidden>
+  <h2>Producción</h2>
+  <p class="lead">Anota cuántas unidades de cada tipo de tostón hiciste cada día.</p>
+  <div class="cols">
+    <div class="stack">
+      <div class="card">
+        <form id="fProd">
+          <h3 id="pdTitulo">Registrar producción</h3>
+          <input type="hidden" id="pdId">
+          <label>Fecha<input type="date" id="pdFecha" required></label>
+          <div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Tostones producidos</div>
+            <div class="lines" id="pdLines"></div></div>
+          <button class="btn ghost" type="button" id="pdAdd">+ Agregar otro tipo</button>
+          <label>Grupo de gastos de esta producción<select id="pdGrupo"></select></label>
+          <label>Lo que gastaste en toda esta producción<input type="number" step="any" min="0" id="pdCosto"></label>
+          <div class="calc" id="pdCalc" hidden></div>
+          <label>Nota<input id="pdNota"></label>
+          <div class="btns"><button class="btn" type="submit">Guardar producción</button><button class="btn ghost" type="button" id="pdCancel" hidden>Cancelar y hacer una nueva</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <form id="fTipo">
+          <h3 id="tiTitulo">Tipos de tostón</h3>
+          <input type="hidden" id="tiId">
+          <div class="row2">
+            <label>Nombre<input id="tiNombre" required maxlength="60"></label>
+            <label>Precio de venta normal<input type="number" step="any" min="0" id="tiPrecio"></label>
+          </div>
+          <div class="btns"><button class="btn" type="submit">Guardar tipo</button><button class="btn ghost" type="button" id="tiCancel" hidden>Cancelar</button></div>
+        </form>
+        <div class="tablebox" id="lTipos" style="margin-top:14px"></div>
+      </div>
+    </div>
+    <div class="card cards"><h3>Producción registrada</h3><div class="tablebox" id="lProd"></div></div>
+  </div>
+</section>
+
+<!-- ---------- VENTAS ---------- -->
+<section class="tab" id="t-ventas" hidden>
+  <h2>Ventas</h2>
+  <p class="lead">Si el cliente no paga todo, lo que falta queda como deuda en “Clientes y deudas”.</p>
+  <div class="cols">
+    <div class="card">
+      <form id="fVenta">
+        <h3 id="veTitulo">Nueva venta</h3>
+        <input type="hidden" id="veId">
+        <div class="row2">
+          <label>Fecha<input type="date" id="veFecha" required></label>
+          <div class="clipick"><label for="veCliente">Cliente</label><select id="veCliente"></select>
+            <button class="linkbtn" type="button" id="veCliNuevo">+ Cliente nuevo</button></div>
+        </div>
+        <div class="newcli card" id="veCliBox" hidden style="padding:14px">
+          <b>Nuevo cliente</b>
+          <label>Nombre<input id="veCliNom" maxlength="80"></label>
+          <label>Teléfono (WhatsApp)<input id="veCliTel" inputmode="tel"></label>
+          <div class="btns"><button class="btn sm" type="button" id="veCliGuardar">Guardar cliente</button><button class="btn sm ghost" type="button" id="veCliCancel">Cancelar</button></div>
+        </div>
+        <div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Tostones vendidos</div>
+          <div class="lines" id="veLines"></div></div>
+        <button class="btn ghost" type="button" id="veAdd">+ Agregar otro tipo</button>
+        <div class="row2">
+          <label>Pago<select id="vePago"><option value="todo">Pagó todo</option><option value="credito">A crédito (debe todo)</option><option value="parte">Pagó una parte</option></select></label>
+          <label id="vePagadoBox" hidden>Cuánto pagó<input type="number" step="any" min="0" id="vePagado"></label>
+        </div>
+        <div class="calc" id="veCalc"></div>
+        <div class="btns"><button class="btn" type="submit">Guardar venta</button><button class="btn ghost" type="button" id="veCancel" hidden>Cancelar y hacer una nueva</button></div>
+      </form>
+    </div>
+    <div class="card cards"><h3>Ventas registradas</h3><div class="tablebox" id="lVentas"></div></div>
+  </div>
+</section>
+
+<!-- ---------- CLIENTES ---------- -->
+<section class="tab" id="t-clientes" hidden>
+  <h2>Clientes y deudas</h2>
+  <p class="lead">Cuánto te debe cada cliente. Cuando te paguen, anota el pago aquí.</p>
+  <div class="cols">
+    <div class="card">
+      <form id="fCliente">
+        <h3 id="clTitulo">Nuevo cliente</h3>
+        <input type="hidden" id="clId">
+        <label>Nombre<input id="clNombre" required maxlength="80"></label>
+        <label>Teléfono<input id="clTel" inputmode="tel"></label>
+        <label>Dirección / notas<input id="clNotas"></label>
+        <label class="check"><input type="checkbox" id="clRec" checked> <span>Avisarme si me debe por más de <span class="diasAviso">7</span> días</span></label>
+        <div class="btns"><button class="btn" type="submit">Guardar cliente</button><button class="btn ghost" type="button" id="clCancel" hidden>Cancelar</button></div>
+      </form>
+    </div>
+    <div class="stack">
+      <div class="card cards"><h3>Clientes</h3><div class="tablebox" id="lCli"></div></div>
+      <div class="card cards"><h3>Pagos recibidos</h3><div class="tablebox" id="lPagos"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- FÁBRICA (empresa) ---------- -->
+<section class="tab" id="t-empresa" hidden>
+  <h2>Fábrica</h2>
+  <p class="lead">Los datos de esta fábrica y quién puede usarla. Cada fábrica solo ve sus propios datos.</p>
+  <div class="cols">
+    <div class="stack">
+      <div class="card">
+        <form id="fEmpresa">
+          <h3>Datos de la fábrica</h3>
+          <label>Nombre<input id="emNombre" required maxlength="80"></label>
+          <div class="row2">
+            <label>Moneda<input id="emMoneda" maxlength="4"></label>
+            <label>Avisar deudas de más de (días)<input type="number" min="0" step="1" id="emDias"></label>
+          </div>
+          <div class="btns"><button class="btn" type="submit" id="emGuardar">Guardar</button></div>
+          <div class="note" id="emSoloAdmin" hidden>Solo el dueño o un administrador puede cambiar estos datos.</div>
+        </form>
+      </div>
+      <div class="card">
+        <form id="fOtra">
+          <h3>Crear otra fábrica</h3>
+          <label>Nombre<input id="otNombre" required maxlength="80"></label>
+          <div class="btns"><button class="btn" type="submit">Crear y cambiar a ella</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Tu cuenta</h3>
+        <p style="margin:0 0 12px">Entraste como <b id="who2"></b>.</p>
+        <button class="btn ghost" type="button" id="logoutBtn2">Salir</button>
+      </div>
+      <div class="card">
+        <h3>Traer datos del sistema anterior</h3>
+        <p class="muted" style="margin:0 0 12px;font-size:14px">Si tienes una copia de seguridad de Tostitos (el archivo .json), puedes cargarla en esta fábrica.</p>
+        <input type="file" id="impFile" accept=".json,application/json" hidden>
+        <button class="btn ghost" type="button" id="impBtn">Cargar copia de Tostitos</button>
+        <div class="msg ok" id="impMsg" role="status"></div>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="card cards"><h3>Equipo</h3><div class="tablebox" id="lEquipo"></div></div>
+      <div class="card" id="invBox">
+        <form id="fInvitar">
+          <h3>Invitar a alguien</h3>
+          <p class="muted" style="margin:-6px 0 0;font-size:14px">La persona crea su cuenta con ese correo y entra directo a esta fábrica.</p>
+          <div class="row2">
+            <label>Correo<input type="email" id="inEmail" required></label>
+            <label>Rol<select id="inRol"><option value="operador">Operador (registra datos)</option><option value="admin">Administrador (también maneja el equipo)</option></select></label>
+          </div>
+          <div class="btns"><button class="btn" type="submit">Invitar</button></div>
+        </form>
+        <div class="tablebox" id="lInvit" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
