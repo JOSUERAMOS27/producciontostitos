@@ -17,3 +17,7 @@ Sistema web básico para la fábrica de tostones Tostitos: gastos en materia pri
 3. En **Firestore Database**, crea la base de datos y pega el contenido de `firestore.rules` en la pestaña **Reglas**, cambiando `TU_CORREO@gmail.com` por tu correo.
 4. En **Configuración del proyecto > Tus apps**, agrega una app web y copia `apiKey`, `authDomain`, `projectId` y `appId` en `config.js`.
 5. Publica la página con GitHub Pages (Settings > Pages > rama `main`, carpeta raíz) y agrega el dominio `TU_USUARIO.github.io` en Authentication > Settings > Dominios autorizados.
+
+## Versión multiempresa
+
+En la carpeta [`multi/`](multi/) está **Tostones Multi**: las mismas funciones, pero para varias fábricas a la vez, con una base de datos PostgreSQL (Supabase) y sus propias tablas. Mira [`multi/README.md`](multi/README.md).
