@@ -105,6 +105,16 @@ td .s{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 button.kpi{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;justify-content:flex-start}
 button.kpi span{display:block}
 button.kpi:hover{border-color:var(--leaf);box-shadow:0 2px 0 var(--leaf)}
+.aviso{border-color:var(--warn);background:var(--warn-bg);margin-bottom:20px;display:grid;gap:4px}
+.aviso h3{color:var(--warn);margin-bottom:6px}
+.avrow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+.avrow .s{display:block;color:var(--fg);font-size:13.5px}
+.btn.wa{background:#1f7a3f;color:#fff;text-decoration:none}
+.clipick{display:grid;gap:6px;align-content:start}
+.clipick .btn{justify-self:start}
+.newcli{display:grid;gap:10px}
+label.check{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;min-height:44px}
+label.check input{width:20px;height:20px;min-height:0;flex:none}
 .kpi.hi{background:var(--gold);border-color:transparent;color:var(--gold-ink)}
 .kpi.hi .l,.kpi.hi .h{color:var(--gold-ink)}
 .kpi.hi .v.neg{color:#8f1d16}
@@ -257,6 +267,7 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
   <!-- RESUMEN -->
   <section class="tab" id="t-resumen">
     <div class="mes"><h2 style="margin:0">Resumen del mes</h2><label for="mesSel">Mes <input id="mesSel" type="month"></label></div>
+    <div id="avisos"></div>
     <div class="kpis" id="kpis"></div>
     <div class="grid2">
       <div class="card" style="min-width:0"><h3>Por tipo de tostón</h3><div class="tablebox cards" id="resTipos"></div></div>
@@ -298,7 +309,7 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
           </div>
           <label for="gaLote">Código de grupo<input id="gaLote" list="gaLoteList" placeholder="Opcional, por ejemplo G-001" autocomplete="off"><datalist id="gaLoteList"></datalist></label>
           <div class="calc" id="gaCalc" hidden></div>
-          <div class="btns"><button class="btn" type="submit" id="gaSave">Guardar gasto</button><button class="btn ghost" type="button" id="gaCancel" hidden>Cancelar</button></div>
+          <div class="btns"><button class="btn" type="submit" id="gaSave">Guardar gasto</button><button class="btn ghost" type="button" id="gaCancel" hidden>Cancelar y hacer un nuevo</button></div>
         </form>
       </div>
       <div class="card" style="min-width:0">
@@ -332,7 +343,7 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
             <label for="pdCosto">Lo que gastaste en toda esta producción<input id="pdCosto" type="number" step="any" min="0" placeholder="Plátano, aceite, bolsas, gas, mano de obra…"></label>
             <div class="calc" id="pdCalc"></div>
             <label for="pdNota">Nota<input id="pdNota" placeholder="Opcional"></label>
-            <div class="btns"><button class="btn" type="submit" id="pdSave">Guardar producción</button><button class="btn ghost" type="button" id="pdCancel" hidden>Cancelar</button></div>
+            <div class="btns"><button class="btn" type="submit" id="pdSave">Guardar producción</button><button class="btn ghost" type="button" id="pdCancel" hidden>Cancelar y hacer una nueva</button></div>
           </form>
         </div>
         <div class="card">
@@ -361,7 +372,13 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
           <input type="hidden" id="veId">
           <div class="row2">
             <label for="veFecha">Fecha<input id="veFecha" type="date" required></label>
-            <label for="veCli">Cliente<select id="veCli"></select></label>
+            <div class="clipick"><label for="veCli">Cliente<select id="veCli"></select></label><button class="btn ghost sm" type="button" id="veNewCli">+ Cliente nuevo</button></div>
+          </div>
+          <div class="note newcli" id="veCliBox" hidden>
+            <b>Nuevo cliente</b>
+            <label for="veCliNom">Nombre<input id="veCliNom" placeholder="Colmado La Esquina" autocomplete="off"></label>
+            <label for="veCliTel">Teléfono (WhatsApp)<input id="veCliTel" type="tel" placeholder="Opcional"></label>
+            <div class="btns"><button class="btn sm" type="button" id="veCliOk">Guardar cliente</button><button class="btn ghost sm" type="button" id="veCliNo">Cancelar</button></div>
           </div>
           <div>
             <h3 style="margin:6px 0 6px">Tostones vendidos</h3>
@@ -373,7 +390,7 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
             <label for="vePagado" id="vePagadoLbl" hidden>Cuánto pagó<input id="vePagado" type="number" step="any" min="0"></label>
           </div>
           <div class="calc" id="veCalc"></div>
-          <div class="btns"><button class="btn" type="submit" id="veSave">Guardar venta</button><button class="btn ghost" type="button" id="veCancel" hidden>Cancelar</button></div>
+          <div class="btns"><button class="btn" type="submit" id="veSave">Guardar venta</button><button class="btn ghost" type="button" id="veCancel" hidden>Cancelar y hacer una nueva</button></div>
         </form>
       </div>
       <div class="card" style="min-width:0"><h3>Ventas registradas</h3><div class="tablebox cards" id="lVentas"></div></div>
@@ -392,6 +409,7 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
           <label for="clNombre">Nombre<input id="clNombre" required placeholder="Colmado La Esquina"></label>
           <label for="clTel">Teléfono<input id="clTel"></label>
           <label for="clDir">Dirección / notas<input id="clDir"></label>
+          <label class="check"><input type="checkbox" id="clRec" checked> Avisarme si me debe por más de 7 días</label>
           <div class="btns"><button class="btn" type="submit">Guardar cliente</button><button class="btn ghost" type="button" id="clCancel" hidden>Cancelar</button></div>
         </form>
       </div>
@@ -435,6 +453,26 @@ function deuda(c){
 const nomTipo=id=>byId("tipos",id)?.nombre||"(tipo borrado)";
 const nomCli=id=>byId("clientes",id)?.nombre||"Cliente general";
 
+/* ---------- recordatorios de deuda ---------- */
+const DIAS_AVISO=7;
+/* Desde cuándo debe: los pagos cubren primero las ventas más viejas */
+function debeDesde(c){
+  const V=S.ventas.filter(v=>v.clienteId===c.id).map(v=>({f:v.fecha||"",r:totalVenta(v)-num(v.pagado)})).filter(x=>x.r>0.004).sort((a,b)=>a.f.localeCompare(b.f));
+  let p=S.pagos.filter(x=>x.clienteId===c.id).reduce((a,x)=>a+num(x.monto),0);
+  // los saldos a favor de ventas sobrepagadas también cuentan como pago
+  p+=S.ventas.filter(v=>v.clienteId===c.id).reduce((a,v)=>a+Math.max(num(v.pagado)-totalVenta(v),0),0);
+  for(const x of V){if(p>=x.r-0.004){p-=x.r;continue}return x.f}
+  return "";
+}
+const diasDesde=f=>{if(!f)return 0;const [y,m,d]=f.split("-").map(Number);const t=today().split("-").map(Number);return Math.round((Date.UTC(t[0],t[1]-1,t[2])-Date.UTC(y,m-1,d))/864e5)};
+function atrasados(){return S.clientes.map(c=>{const d=deuda(c),f=d>0.004?debeDesde(c):"";return {c,d,f,dias:diasDesde(f)}}).filter(x=>x.d>0.004&&x.c.recordar!==false&&x.dias>DIAS_AVISO).sort((a,b)=>b.dias-a.dias)}
+function waLink(c,d,f){
+  let tel=String(c.telefono||"").replace(/\D/g,"");if(tel.length===10&&/^(809|829|849)/.test(tel))tel="1"+tel;
+  const msg=`Hola ${c.nombre}, le saludamos de Tostitos. Le recordamos que tiene un saldo pendiente de ${money(d)}${f?" desde el "+fdate(f).replace(/&#?\w+;/g,""):""}. ¡Muchas gracias!`;
+  return "https://wa.me/"+(tel||"")+"?text="+encodeURIComponent(msg);
+}
+const waBtn=(c,d,f)=>`<a class="btn sm wa" href="${esc(waLink(c,d,f))}" target="_blank" rel="noopener">Recordar por WhatsApp</a>`;
+
 /* ---------- datos ---------- */
 async function save(col,id,data){
   if(!db){toast("No se puede guardar en esta vista");return false}
@@ -454,6 +492,8 @@ const rowBtns=(k,col,id,l)=>`<span class="btns" style="justify-content:flex-end"
 function modoEditar(pre,on,titulo,nuevo){$(pre+"Title").textContent=on?titulo:nuevo;$(pre+"Cancel").hidden=!on;$(pre+"Save").textContent=on?"Guardar cambios":$(pre+"Save").dataset.txt;
   if(on){const f=$(pre+"Title").closest(".card");f.scrollIntoView({behavior:"smooth",block:"start"})}}
 ["ga","pd","ve"].forEach(p=>{const b=$(p+"Save");if(b)b.dataset.txt=b.textContent});
+/* Si cambias de pestaña con un formulario en modo editar, vuelve a modo nuevo */
+function salirDeEditar(){if($("gaId").value)resetGasto();if($("pdId").value)resetProd();if($("veId").value)resetVenta()}
 const EDIT={};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-edit]");if(!b)return;const f=EDIT[b.dataset.edit];if(f)f(b.dataset.id)});
 const delBtn=(col,id,l)=>`<button class="btn sm danger" data-col="${col}" data-del="${esc(id)}">${l||"Borrar"}</button>`;
@@ -474,6 +514,7 @@ $("moneda").addEventListener("change",async e=>{MON=e.target.value.trim()||"$";r
 document.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;showTab(b.dataset.go);window.scrollTo(0,0)});
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(b)showTab(b.dataset.t)});
 function showTab(t){
+  if($("gaId").value||$("pdId").value||$("veId").value)salirDeEditar();
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t?"true":"false"));
   document.querySelectorAll("section.tab").forEach(s=>s.hidden=s.id!=="t-"+t);
   try{localStorage.setItem("tost_tab2",t)}catch(e){}
@@ -667,8 +708,24 @@ $("fVenta").addEventListener("submit",async e=>{
   if(await save("ventas",id||null,{fecha:$("veFecha").value||today(),clienteId:cli,items,total:t,pagado:pg,creado:prev?.creado||Date.now()})){
     toast((id?"Venta actualizada":"Venta guardada")+(t-pg>0.004?". Queda debiendo "+money(t-pg):""));resetVenta()}
 });
+let cliPend="";
+function cerrarNuevoCli(){$("veCliBox").hidden=true;$("veNewCli").hidden=false;$("veCliNom").value="";$("veCliTel").value=""}
+$("veNewCli").onclick=()=>{$("veCliBox").hidden=false;$("veNewCli").hidden=true;$("veCliNom").focus()};
+$("veCliNo").onclick=cerrarNuevoCli;
+$("veCliNom").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("veCliOk").click()}});
+$("veCliOk").onclick=async()=>{
+  const nombre=$("veCliNom").value.trim();if(!nombre){toast("Escribe el nombre del cliente");$("veCliNom").focus();return}
+  if(!db){toast("No se puede guardar en esta vista");return}
+  const ya=S.clientes.find(c=>String(c.nombre).trim().toLowerCase()===nombre.toLowerCase());
+  if(ya){$("veCli").value=ya.id;cerrarNuevoCli();toast(nombre+" ya existía, lo elegí");return}
+  const b=$("veCliOk");b.disabled=true;
+  try{const r=await db.collection("clientes").add({nombre,telefono:$("veCliTel").value.trim(),direccion:"",creado:Date.now()});cliPend=r.id;
+    renderVentas();cerrarNuevoCli();toast("Cliente "+nombre+" agregado")}
+  catch(e){toast("No se pudo guardar el cliente")}finally{b.disabled=false}
+};
 function renderVentas(){
   fill($("veCli"),sortN(S.clientes),"Cliente general (pagó todo)");
+  if(cliPend&&byId("clientes",cliPend)){$("veCli").value=cliPend;cliPend="";calcVenta()}
   [...$("veLines").children].forEach(l=>{const s=l.querySelector("select");const v=s.value;s.innerHTML=opts(sortN(S.tipos),v,"Tipo…")});
   if(!$("veLines").children.length)lineVenta();calcVenta();
   const L=sortF(S.ventas).slice(0,100);
@@ -684,12 +741,12 @@ function resetCli(){$("fCli").reset();$("clId").value="";$("clTitle").textConten
 $("clCancel").onclick=resetCli;
 $("fCli").addEventListener("submit",async e=>{
   e.preventDefault();const id=$("clId").value;const prev=id?byId("clientes",id):null;
-  const d={nombre:$("clNombre").value.trim(),telefono:$("clTel").value.trim(),direccion:$("clDir").value.trim(),creado:prev?.creado||Date.now()};
+  const d={nombre:$("clNombre").value.trim(),telefono:$("clTel").value.trim(),direccion:$("clDir").value.trim(),recordar:$("clRec").checked,creado:prev?.creado||Date.now()};
   if(!d.nombre)return;if(await save("clientes",id||null,d)){toast("Cliente guardado");resetCli()}
 });
 document.addEventListener("click",async e=>{
   const ed=e.target.closest("[data-edit-cli]");
-  if(ed){const c=byId("clientes",ed.dataset.editCli);if(!c)return;$("clId").value=c.id;$("clNombre").value=c.nombre;$("clTel").value=c.telefono||"";$("clDir").value=c.direccion||"";$("clTitle").textContent="Editar "+c.nombre;$("clCancel").hidden=false;$("clNombre").focus();return}
+  if(ed){const c=byId("clientes",ed.dataset.editCli);if(!c)return;$("clId").value=c.id;$("clNombre").value=c.nombre;$("clTel").value=c.telefono||"";$("clDir").value=c.direccion||"";$("clRec").checked=c.recordar!==false;$("clTitle").textContent="Editar "+c.nombre;$("clCancel").hidden=false;$("clNombre").focus();return}
   const pb=e.target.closest("[data-pagar]");
   if(pb){const c=byId("clientes",pb.dataset.pagar);const inp=document.getElementById("ab-"+pb.dataset.pagar);const m=num(inp&&inp.value);
     if(!c||m<=0){toast("Escribe cuánto pagó");return}
@@ -708,7 +765,7 @@ function renderClientes(){
   const C=sortN(S.clientes).map(c=>({c,d:deuda(c)})).sort((a,b)=>b.d-a.d);
   $("lCli").innerHTML=C.length?`<table><thead><tr><th>Cliente</th><th class="n">Debe</th><th class="n">Registrar pago</th><th></th></tr></thead><tbody>${
     C.map(({c,d})=>`<tr><td><b>${esc(c.nombre)}</b><span class="s">${esc([c.telefono,c.direccion].filter(Boolean).join(" · "))}</span></td>
-    <td class="n">${d>0.004?`<b style="color:var(--warn)">${money(d)}</b>`:d<-0.004?`<span class="s">Saldo a favor ${money(-d)}</span>`:'<span class="pill pag">Al día</span>'}</td>
+    <td class="n">${d>0.004?(()=>{const f=debeDesde(c),n=diasDesde(f),late=n>DIAS_AVISO;return `<b style="color:var(--warn)">${money(d)}</b><span class="s">${f?(n<=0?"desde hoy":"hace "+n+" día"+(n===1?"":"s")):""}${c.recordar===false?" · sin aviso":""}</span>${late&&c.recordar!==false?'<span class="pill neg">Más de una semana</span>':""}${late?`<span class="s" style="margin-top:6px">${waBtn(c,d,f)}</span>`:""}`})():d<-0.004?`<span class="s">Saldo a favor ${money(-d)}</span>`:'<span class="pill pag">Al día</span>'}</td>
     <td class="n"><span class="abono"><input id="ab-${esc(c.id)}" type="number" step="any" min="0" aria-label="Monto pagado por ${esc(c.nombre)}" placeholder="Monto"${d>0.004?` value="${Math.round(d*100)/100}"`:""}><button class="btn sm" data-pagar="${esc(c.id)}">Pagó</button></span></td>
     <td class="n"><span class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-edit-cli="${esc(c.id)}">Editar</button>${delBtn("clientes",c.id)}</span></td></tr>`).join("")
   }</tbody></table>`:`<div class="empty">Agrega a tus clientes para llevar lo que te deben.</div>`;
@@ -728,13 +785,15 @@ function renderResumen(){
   const G=S.gastos.filter(enMes),V=S.ventas.filter(enMes),P=S.produccion.filter(enMes);
   const gt=G.reduce((a,g)=>a+num(g.monto),0),vt=V.reduce((a,v)=>a+totalVenta(v),0);
   const cobrado=V.reduce((a,v)=>a+num(v.pagado),0)+S.pagos.filter(enMes).reduce((a,p)=>a+num(p.monto),0);
-  const porCobrar=S.clientes.reduce((a,c)=>a+Math.max(deuda(c),0),0),nDeben=S.clientes.filter(c=>deuda(c)>0.004).length;
+  const porCobrar=S.clientes.reduce((a,c)=>a+Math.max(deuda(c),0),0),nDeben=S.clientes.filter(c=>deuda(c)>0.004).length;const AT=atrasados();
   const gan=vt-gt;
   $("kpis").innerHTML=`
    <button type="button" class="kpi go" data-go="ventas" aria-label="Ventas de ${fmes(mes)}: ${money(vt)}. Ver ventas"><span class="l">Ventas de ${fmes(mes)}</span><span class="v">${money(vt)}</span><span class="h">${V.length} ventas · cobrado ${money(cobrado)} · <u>ver</u> →</span></button>
    <button type="button" class="kpi go" data-go="gastos" aria-label="Gastos de ${fmes(mes)}: ${money(gt)}. Ver gastos"><span class="l">Gastos de ${fmes(mes)}</span><span class="v">${money(gt)}</span><span class="h">${G.length} gastos · <u>ver</u> →</span></button>
    <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v${gan<0?" neg":""}">${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
-   <button type="button" class="kpi go" data-go="clientes" aria-label="Te deben ${money(porCobrar)}. Ver clientes y deudas"><span class="l">Te deben</span><span class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</span><span class="h">${nDeben?nDeben+" cliente"+(nDeben>1?"s":""):"nadie te debe"} · <u>ver quién</u> →</span></button>`;
+   <button type="button" class="kpi go" data-go="clientes" aria-label="Te deben ${money(porCobrar)}. Ver clientes y deudas"><span class="l">Te deben</span><span class="v" style="color:${porCobrar>0?"var(--warn)":"inherit"}">${money(porCobrar)}</span><span class="h">${nDeben?nDeben+" cliente"+(nDeben>1?"s":""):"nadie te debe"}${AT.length?` · <b style="color:var(--bad)">${AT.length} atrasado${AT.length>1?"s":""}</b>`:""} · <u>ver quién</u> →</span></button>`;
+  $("avisos").innerHTML=AT.length?`<div class="card aviso"><h3>${AT.length===1?"1 cliente te debe":AT.length+" clientes te deben"} desde hace más de una semana</h3>${
+    AT.map(({c,d,f,dias})=>`<div class="avrow"><span><b>${esc(c.nombre)}</b><span class="s">${money(d)} · hace ${dias} días</span></span>${waBtn(c,d,f)}</div>`).join("")}</div>`:"";
   const PI=P.flatMap(prodItems);
   const ids=[...new Set([...S.tipos.map(t=>t.id),...PI.map(p=>p.tipoId),...V.flatMap(v=>(v.items||[]).map(i=>i.tipoId))])];
   const rows=ids.map(id=>{const pp=PI.filter(p=>p.tipoId===id);const prod=pp.reduce((a,p)=>a+num(p.cantidad),0);
