@@ -650,10 +650,11 @@ $("impFile").addEventListener("change", async e => {
     if (!confirm(`Se van a agregar a “${emp().nombre}”: ${L("tipos").length} tipos, ${L("clientes").length} clientes, ${L("gastos").length} gastos, ${L("produccion").length} producciones, ${L("ventas").length} ventas y ${L("pagos").length} pagos. ¿Seguir?`)) return;
     msg.className = "msg ok"; msg.textContent = "Cargando…";
     const uid = () => crypto.randomUUID(), fecha = x => /^\d{4}-\d{2}-\d{2}$/.test(x || "") ? x : today();
-    const ins = async (t, rows) => { for (let i = 0; i < rows.length; i += 500) chk(await sb.from(t).insert(rows.slice(i, i + 500))); };
+    // defaultToNull:false: si una fila no trae un campo, la base usa su valor por defecto (no NULL)
+    const ins = async (t, rows) => { for (let i = 0; i < rows.length; i += 500) chk(await sb.from(t).insert(rows.slice(i, i + 500), { defaultToNull: false })); };
     // Tipos: si ya existe uno con el mismo nombre, se usa ese
     const mapT = {}, porNombre = Object.fromEntries(S.tipos.map(t => [t.nombre.toLowerCase(), t.id])), nuevosT = [];
-    L("tipos").forEach(t => { const n = String(t.nombre || "Sin nombre").trim(), k = n.toLowerCase(); if (!porNombre[k]) { porNombre[k] = uid(); nuevosT.push({ id: porNombre[k], empresa_id: E, nombre: n, precio: r2(t.precio) }); } mapT[t.id] = porNombre[k]; });
+    L("tipos").forEach(t => { const n = String(t.nombre || "Sin nombre").trim(), k = n.toLowerCase(); if (!porNombre[k]) { porNombre[k] = uid(); nuevosT.push({ id: porNombre[k], empresa_id: E, nombre: n, precio: r2(t.precio), activo: true }); } mapT[t.id] = porNombre[k]; });
     const tipoDe = id => { if (!mapT[id]) { mapT[id] = uid(); nuevosT.push({ id: mapT[id], empresa_id: E, nombre: "Tipo viejo " + nuevosT.length, precio: 0, activo: false }); } return mapT[id]; };
     const mapC = {}, nuevosC = L("clientes").map(c => ({ id: (mapC[c.id] = uid()), empresa_id: E, nombre: String(c.nombre || "Sin nombre").trim() || "Sin nombre", telefono: c.telefono || null, notas: c.direccion || null, recordar: c.recordar !== false }));
     const gastos = L("gastos").map(g => ({ empresa_id: E, fecha: fecha(g.fecha), tipo: ["Materia prima", "Producción", "Otro"].includes(g.tipo) ? g.tipo : "Otro", descripcion: String(g.descripcion || "Gasto").trim() || "Gasto", cantidad: num(g.cantidad) || null, unidad: g.unidad || null, monto: Math.max(0, r2(g.monto)), proveedor: g.proveedor || null, grupo: limpiaCod(g.lote) || null }));
