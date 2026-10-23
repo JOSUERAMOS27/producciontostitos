@@ -157,6 +157,11 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
 .pill.pag{background:var(--good-bg);color:var(--good)}
 .abono{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .abono input{width:110px;min-height:36px}
+.prodhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.prodhead h3{margin:0}
+.prodhead select{flex:1 1 220px;max-width:100%;min-height:44px}
+#prodInfo .calc{margin-bottom:12px}
+#prodInfo .nota{font-size:13.5px;color:var(--muted);margin:0 0 12px}
 
 
 /* ----- celular: cada fila de las listas se ve como una tarjeta ----- */
@@ -203,7 +208,7 @@ td.ck,th.ck{width:34px;padding-right:0}td.ck input{width:20px;height:20px;margin
   #resTipos td:nth-child(1){order:1;flex:1 1 100%;font-size:16px}
   #resTipos td:nth-child(2){order:3;}#resTipos td:nth-child(2)::before{content:"Producidas"}
   #resTipos td:nth-child(3){order:4;}#resTipos td:nth-child(3)::before{content:"Vendidas"}
-  #resTipos td:nth-child(4){order:5;}#resTipos td:nth-child(4)::before{content:"Vendido"}
+  #resTipos td:nth-child(4){order:5;}#resTipos td:nth-child(4)::before{content:"Quedan"}
   #resTipos td:nth-child(5){order:6;}#resTipos td:nth-child(5)::before{content:"Costo c/u"}
   #resTipos td:nth-child(6){order:7;}#resTipos td:nth-child(6)::before{content:"Margen"}
 }

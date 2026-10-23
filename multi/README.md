@@ -42,3 +42,13 @@ Vistas listas para consultar: `v_ventas` (total y pendiente de cada venta), `v_s
 - `config.js`: dirección y llave pública de tu proyecto de Supabase.
 - `schema.sql`: las tablas, vistas, funciones y permisos. Se puede volver a correr sin perder datos.
 - Usa `../xlsx.full.min.js` (SheetJS) del repositorio para el Excel.
+
+## Producciones abiertas y cerradas
+
+Cada venta se descuenta de la producción abierta más vieja que todavía tenga ese tostón.
+En **Resumen > Producción** eliges una producción y ves cuánto se produjo, vendió y queda de cada tipo.
+Cuando se acaba (o ya no se va a vender lo que sobra), tocas **Cerrar esta producción**: lo que sobró
+se cuenta como merma y las ventas siguientes van a la próxima producción. Se puede volver a abrir.
+
+Si actualizas desde una versión anterior, corre `schema.sql` otra vez en el SQL Editor de Supabase
+(agrega la columna `cerrada_en` y la función `cerrar_produccion`; no borra datos).

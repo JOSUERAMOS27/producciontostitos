@@ -92,8 +92,13 @@
   <div class="kpis" id="kpis"></div>
   <div class="grid2">
     <div class="stack">
-      <div class="card cards"><h3>Por tipo de tostón</h3><div class="tablebox" id="resTipos"></div></div>
-      <div class="card cards"><h3>Existencias</h3><p class="muted" style="margin:-6px 0 10px;font-size:14px">Todo lo producido menos todo lo vendido.</p><div class="tablebox" id="lInv"></div></div>
+      <div class="card cards" id="cardProd">
+        <div class="prodhead"><h3>Producción</h3><select id="prodSel" aria-label="Elegir producción"></select></div>
+        <div id="prodInfo"></div>
+        <div class="tablebox" id="resTipos"></div>
+        <div class="btns" id="prodBtns" style="margin-top:12px"></div>
+      </div>
+      <div class="card cards"><h3>Existencias</h3><p class="muted" style="margin:-6px 0 10px;font-size:14px">Lo que queda de las producciones abiertas.</p><div class="tablebox" id="lInv"></div></div>
     </div>
     <div class="stack">
       <div class="card"><h3>Clientes que deben</h3><div class="tablebox" id="resDeben"></div></div>

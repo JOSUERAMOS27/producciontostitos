@@ -111,6 +111,8 @@ create table if not exists producciones (
   unique (id, empresa_id)
 );
 create index if not exists producciones_empresa_fecha_idx on producciones(empresa_id, fecha);
+-- Cierre de producción: vacío = abierta; con fecha y hora = cerrada (ya no se le descuentan ventas)
+alter table producciones add column if not exists cerrada_en timestamptz;
 
 create table if not exists produccion_items (
   id            uuid primary key default gen_random_uuid(),
@@ -352,6 +354,14 @@ begin
     select e, r, (i ->> 'tipo_id')::uuid, (i ->> 'cantidad')::numeric, coalesce((i ->> 'precio')::numeric, 0)
     from jsonb_array_elements(p -> 'items') i;
   return r;
+end $$;
+
+-- Cierra (o vuelve a abrir) una producción con la hora del servidor
+create or replace function cerrar_produccion(p_id uuid, cerrar boolean) returns void
+language plpgsql security invoker set search_path = public as $$
+begin
+  update producciones set cerrada_en = case when cerrar then now() end where id = p_id;
+  if not found then raise exception 'No se encontró la producción'; end if;
 end $$;
 
 -- ---------------------------------------------------------------------

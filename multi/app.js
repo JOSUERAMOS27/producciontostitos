@@ -250,7 +250,7 @@ const masFilas = (arr, n = MAXF) => arr.length > n ? `<div class="muted" style="
 $("mesSel").value = today().slice(0, 7); $("mesSel").addEventListener("change", renderResumen);
 function renderResumen() {
   const mes = $("mesSel").value || today().slice(0, 7), enMes = x => (x.fecha || "").startsWith(mes);
-  const G = S.gastos.filter(enMes), V = S.ventas.filter(enMes), P = S.producciones.filter(enMes);
+  const G = S.gastos.filter(enMes), V = S.ventas.filter(enMes);
   const gt = G.reduce((a, g) => a + num(g.monto), 0), vt = V.reduce((a, v) => a + totalVenta(v), 0);
   const cobrado = V.reduce((a, v) => a + num(v.pagado), 0) + S.pagos.filter(enMes).reduce((a, p) => a + num(p.monto), 0);
   const porCobrar = S.clientes.reduce((a, c) => a + Math.max(deuda(c), 0), 0), nDeben = S.clientes.filter(c => deuda(c) > 0.004).length, AT = atrasados(), gan = vt - gt;
@@ -260,21 +260,7 @@ function renderResumen() {
    <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v${gan < 0 ? " neg" : ""}">${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
    <button type="button" class="kpi" data-go="clientes"><span class="l">Te deben</span><span class="v" style="color:${porCobrar > 0 ? "var(--warn)" : "inherit"}">${money(porCobrar)}</span><span class="h">${nDeben ? nDeben + " cliente" + (nDeben > 1 ? "s" : "") : "nadie te debe"}${AT.length ? ` · <b style="color:var(--bad)">${AT.length} atrasado${AT.length > 1 ? "s" : ""}</b>` : ""} · <u>ver quién</u> →</span></button>`;
   $("avisos").innerHTML = AT.length ? `<div class="card aviso"><h3>${AT.length === 1 ? "1 cliente te debe" : AT.length + " clientes te deben"} desde hace más de ${diasAviso()} días</h3>${AT.map(({ c, d, f, dias }) => `<div class="avrow"><span><b>${esc(c.nombre)}</b><span class="s">${money(d)} · hace ${dias} días</span></span>${waBtn(c, d, f)}</div>`).join("")}</div>` : "";
-  const PI = P.flatMap(prodItems);
-  const ids = [...new Set([...S.tipos.filter(t => t.activo).map(t => t.id), ...PI.map(p => p.tipo_id), ...V.flatMap(v => v.items.map(i => i.tipo_id))])];
-  const rows = ids.map(id => {
-    const pp = PI.filter(p => p.tipo_id === id), prod = pp.reduce((a, p) => a + p.cantidad, 0), cc = pp.filter(p => p.costo > 0);
-    const uC = cc.reduce((a, p) => a + p.cantidad, 0), kC = cc.reduce((a, p) => a + p.costo, 0);
-    let cant = 0, monto = 0; V.forEach(v => v.items.forEach(i => { if (i.tipo_id === id) { cant += num(i.cantidad); monto += num(i.cantidad) * num(i.precio); } }));
-    const cu = uC > 0 ? kC / uC : 0, pv = cant > 0 ? monto / cant : num(byId("tipos", id)?.precio);
-    return { id, prod, cant, monto, cu, pv, pct: cu > 0 && pv > 0 ? (pv - cu) / pv * 100 : null };
-  }).sort((a, b) => b.monto - a.monto);
-  $("resTipos").innerHTML = rows.length ? tabla(`<th>Tipo</th><th class="n">Producidas</th><th class="n">Vendidas</th><th class="n">Vendido</th><th class="n">Costo c/u</th><th class="n">Margen</th>`,
-    rows.map(r => `<tr><td>${esc(nomTipo(r.id))}</td><td class="n">${qty(r.prod)}</td><td class="n">${qty(r.cant)}</td><td class="n">${money(r.monto)}</td><td class="n">${r.cu > 0 ? money(r.cu) : "—"}</td><td class="n">${r.pct == null ? "—" : margenPill(r.pct) + `<span class="s">a ${money(r.pv)} c/u</span>`}</td></tr>`), "")
-    : `<div class="muted">Agrega tus tipos de tostón en la pestaña Producción.</div>`;
-  const inv = S.inventario.filter(r => r.activo || num(r.existencia) !== 0).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  $("lInv").innerHTML = tabla(`<th>Tipo</th><th class="n">Producidas</th><th class="n">Vendidas</th><th class="n">Quedan</th>`,
-    inv.map(r => `<tr><td>${esc(r.nombre)}</td><td class="n">${qty(r.producidas)}</td><td class="n">${qty(r.vendidas)}</td><td class="n"><b${num(r.existencia) < 0 ? ' style="color:var(--bad)"' : ""}>${qty(r.existencia)}</b></td></tr>`), "Todavía no hay tipos de tostón.");
+  renderProdPanel();
   const D = S.clientes.map(c => ({ c, d: deuda(c) })).filter(x => x.d > 0.004).sort((a, b) => b.d - a.d);
   $("resDeben").innerHTML = D.length ? `<table><tbody>${D.map(({ c, d }) => `<tr><td>${esc(c.nombre)}</td><td class="n"><b style="color:var(--warn)">${money(d)}</b></td></tr>`).join("")}</tbody></table>` : `<div class="muted">Nadie te debe ahora mismo.</div>`;
   const porTipo = {}, porDesc = {};
@@ -282,6 +268,84 @@ function renderResumen() {
   const top = Object.entries(porDesc).sort((a, b) => b[1] - a[1]).slice(0, 8);
   $("resGastos").innerHTML = G.length ? `<table><thead><tr><th>Gasto</th><th class="n">Total</th></tr></thead><tbody>${Object.entries(porTipo).map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td class="n"><b>${money(v)}</b></td></tr>`).join("") + top.map(([k, v]) => `<tr><td class="muted">${esc(k)}</td><td class="n muted">${money(v)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted">No hay gastos en ${fmes(mes)}.</div>`;
 }
+
+/* ---------- producciones abiertas y cerradas ----------
+   Cada venta se descuenta de la producción abierta más vieja que todavía tenga ese tostón
+   (lo primero que entra es lo primero que sale). Una producción cerrada solo cuenta las
+   ventas registradas antes de cerrarla; lo que le sobró se toma como merma. */
+const ts = x => Date.parse(x || "") || 0;
+const abierta = p => !p.cerrada_en;
+const nomProd = p => (p.grupo ? p.grupo + " · " : "Producción del ") + fdate(p.fecha);
+function lotesProd() {
+  const L = [...S.producciones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.creado || "").localeCompare(b.creado || ""))
+    .map(p => ({ p, k: prodCosto(p), items: prodItems(p).map(i => ({ ...i, vend: 0, monto: 0 })) }));
+  const V = [...S.ventas].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.creado || "").localeCompare(b.creado || ""));
+  V.forEach(v => (v.items || []).forEach(it => {
+    let q = num(it.cantidad); const pr = num(it.precio);
+    const C = L.filter(l => abierta(l.p) || ts(v.creado) < ts(l.p.cerrada_en)).flatMap(l => l.items.filter(x => x.tipo_id === it.tipo_id));
+    for (const x of C) { if (q <= 0) break; const t = Math.min(q, x.cantidad - x.vend); if (t > 0) { x.vend += t; x.monto += t * pr; q -= t; } }
+    if (q > 0 && C.length) { const x = C[C.length - 1]; x.vend += q; x.monto += q * pr; } // vendiste más de lo producido
+  }));
+  L.forEach(l => {
+    l.u = l.items.reduce((a, x) => a + x.cantidad, 0); l.vend = l.items.reduce((a, x) => a + Math.min(x.vend, x.cantidad), 0);
+    l.quedan = l.items.reduce((a, x) => a + Math.max(x.cantidad - x.vend, 0), 0); l.monto = l.items.reduce((a, x) => a + x.monto, 0);
+    l.cu = l.u > 0 ? l.k / l.u : 0; l.gan = l.monto - l.k;
+  });
+  return L;
+}
+let PSEL = "";
+function renderProdPanel() {
+  const L = lotesProd(), A = L.filter(l => abierta(l.p)).reverse(), C = L.filter(l => !abierta(l.p)).sort((a, b) => ts(b.p.cerrada_en) - ts(a.p.cerrada_en));
+  const sel = $("prodSel");
+  if (!L.length) {
+    sel.hidden = true; $("prodInfo").innerHTML = ""; $("prodBtns").innerHTML = "";
+    $("resTipos").innerHTML = `<div class="muted">Registra tu primera producción en la pestaña Producción.</div>`;
+  } else {
+    if (!L.some(l => l.p.id === PSEL)) PSEL = (A[0] || C[0]).p.id;
+    const op = l => `<option value="${l.p.id}"${l.p.id === PSEL ? " selected" : ""}>${esc(nomProd(l.p))}${abierta(l.p) ? " · quedan " + qty(l.quedan) : ""}</option>`;
+    sel.hidden = false;
+    sel.innerHTML = (A.length ? `<optgroup label="Abiertas">${A.map(op).join("")}</optgroup>` : "") + (C.length ? `<optgroup label="Cerradas">${C.map(op).join("")}</optgroup>` : "");
+    const l = L.find(x => x.p.id === PSEL), ab = abierta(l.p);
+    const estado = !ab ? `<span class="pill">Cerrada el ${fdate(l.p.cerrada_en.slice(0, 10))}</span>` : l.quedan <= 0 ? `<span class="pill ok">Se vendió todo</span>` : `<span class="pill lote">Abierta</span>`;
+    $("prodInfo").innerHTML = (A.length > 1 && ab ? `<p class="nota">Tienes ${A.length} producciones abiertas. Las ventas se descuentan primero de la más vieja.</p>` : "") +
+      `<div class="calc"><div><span class="muted">Estado</span>${estado}</div>
+       <div><span class="muted">Gasto de la producción</span><b>${l.k > 0 ? money(l.k) : "—"}</b></div>
+       <div><span class="muted">Vendido hasta ahora</span><b>${money(l.monto)}</b></div>
+       <div><span class="muted">${ab ? "Quedan" : "Sobraron (merma)"}</span><b>${qty(l.quedan)} de ${qty(l.u)}</b></div>
+       ${l.k > 0 ? `<div class="t"><span>${ab ? "Ganancia hasta ahora" : "Ganancia final"}</span><span style="color:${l.gan < 0 ? "var(--bad)" : "var(--good)"}">${money(l.gan)}</span></div>` : ""}</div>`;
+    const T = {}; l.items.forEach(x => { const t = T[x.tipo_id] = T[x.tipo_id] || { id: x.tipo_id, prod: 0, vend: 0, quedan: 0, monto: 0, costo: 0, precio: x.precio }; t.prod += x.cantidad; t.vend += x.vend; t.quedan += Math.max(x.cantidad - x.vend, 0); t.monto += x.monto; t.costo += x.costo; });
+    $("resTipos").innerHTML = tabla(`<th>Tipo</th><th class="n">Producidas</th><th class="n">Vendidas</th><th class="n">Quedan</th><th class="n">Costo c/u</th><th class="n">Margen</th>`,
+      Object.values(T).map(r => {
+        const cu = r.prod > 0 ? r.costo / r.prod : 0, pv = r.vend > 0 ? r.monto / r.vend : r.precio, pct = cu > 0 && pv > 0 ? (pv - cu) / pv * 100 : null;
+        return `<tr><td>${esc(nomTipo(r.id))}</td><td class="n">${qty(r.prod)}</td><td class="n">${qty(r.vend)}</td><td class="n"><b>${qty(r.quedan)}</b></td><td class="n">${cu > 0 ? money(cu) : "—"}</td><td class="n">${pct == null ? "—" : margenPill(pct) + `<span class="s">a ${money(pv)} c/u</span>`}</td></tr>`;
+      }), "");
+    $("prodBtns").innerHTML = ab ? `<button type="button" class="btn${l.quedan <= 0 ? "" : " ghost"}" data-cerrar="${l.p.id}">Cerrar esta producción</button>`
+      : `<button type="button" class="btn ghost" data-abrir="${l.p.id}">Volver a abrir</button>`;
+  }
+  // Existencias: lo que queda en las producciones abiertas
+  const inv = {}; L.filter(l => abierta(l.p)).forEach(l => l.items.forEach(x => { const r = inv[x.tipo_id] = inv[x.tipo_id] || { id: x.tipo_id, prod: 0, vend: 0, quedan: 0 }; r.prod += x.cantidad; r.vend += x.vend; r.quedan += x.cantidad - x.vend; }));
+  const R = Object.values(inv).sort((a, b) => nomTipo(a.id).localeCompare(nomTipo(b.id), "es"));
+  $("lInv").innerHTML = tabla(`<th>Tipo</th><th class="n">Producidas</th><th class="n">Vendidas</th><th class="n">Quedan</th>`,
+    R.map(r => `<tr><td>${esc(nomTipo(r.id))}</td><td class="n">${qty(r.prod)}</td><td class="n">${qty(r.vend)}</td><td class="n"><b${r.quedan < 0 ? ' style="color:var(--bad)"' : ""}>${qty(r.quedan)}</b></td></tr>`), "No hay producciones abiertas.");
+}
+$("prodSel").addEventListener("change", () => { PSEL = $("prodSel").value; renderProdPanel(); });
+async function cerrarProd(id, cerrar) {
+  const l = lotesProd().find(x => x.p.id === id); if (!l) return;
+  const aviso = !cerrar ? `¿Volver a abrir “${nomProd(l.p)}”? Se le vuelven a descontar ventas.`
+    : l.quedan > 0 ? `Todavía quedan ${qty(l.quedan)} tostones de “${nomProd(l.p)}”.\n\nSi la cierras, esos tostones se cuentan como merma (pérdida) y las próximas ventas se descuentan de la siguiente producción.\n\n¿Cerrarla?`
+    : `¿Cerrar “${nomProd(l.p)}”? Ya se vendió todo.`;
+  if (!confirm(aviso)) return;
+  try {
+    chk(await sb.rpc("cerrar_produccion", { p_id: id, cerrar }));
+    toast(cerrar ? "Producción cerrada" : "Producción abierta otra vez");
+    if (cerrar) PSEL = "";
+    await recargar("producciones");
+  } catch (e) { fail(/cerrar_produccion|cerrada_en/.test(errMsg(e)) ? new Error("Falta actualizar la base: corre de nuevo schema.sql en Supabase (SQL Editor).") : e); }
+}
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-cerrar],[data-abrir]"); if (!c) return;
+  cerrarProd(c.dataset.cerrar || c.dataset.abrir, !!c.dataset.cerrar);
+});
 
 /* ---------- GASTOS ---------- */
 function calcGasto() {
@@ -434,13 +498,13 @@ $("fProd").addEventListener("submit", async ev => {
   catch (e) { fail(e); }
 });
 function renderProd() {
-  const P = sortF(S.producciones);
+  const P = sortF(S.producciones), LM = Object.fromEntries(lotesProd().map(l => [l.p.id, l]));
   $("lProd").innerHTML = tabla(`<th>Fecha</th><th>Tostones</th><th class="n">Gasto</th><th class="n">Costo c/u</th><th class="n">Margen</th><th></th>`,
     corta(P).map(p => {
       const it = prodItems(p), k = prodCosto(p), r = resumenProd(it, k);
-      return `<tr><td>${fdate(p.fecha)}</td><td>${it.map(x => `<b>${qty(x.cantidad)}</b> ${esc(nomTipo(x.tipo_id))}`).join("<br>")}${p.grupo ? `<span class="pill lote">${esc(p.grupo)}</span>` : ""}${p.nota ? `<span class="s">${esc(p.nota)}</span>` : ""}</td>
+      return `<tr><td>${fdate(p.fecha)}</td><td>${it.map(x => `<b>${qty(x.cantidad)}</b> ${esc(nomTipo(x.tipo_id))}`).join("<br>")}${p.grupo ? `<span class="pill lote">${esc(p.grupo)}</span> ` : ""}${abierta(p) ? `<span class="pill ok">Abierta · quedan ${qty(LM[p.id]?.quedan)}</span>` : `<span class="pill">Cerrada</span>`}${p.nota ? `<span class="s">${esc(p.nota)}</span>` : ""}</td>
       <td class="n">${k > 0 ? money(k) : "—"}</td><td class="n">${k > 0 && r.u > 0 ? money(r.cu) : "—"}</td><td class="n">${k > 0 && r.todosConPrecio ? margenPill(r.pct) : "—"}</td>
-      <td class="n"><div class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-ed="prod" data-id="${p.id}">Editar</button><button class="btn sm danger" data-del="producciones" data-id="${p.id}">Borrar</button></div></td></tr>`;
+      <td class="n"><div class="btns" style="justify-content:flex-end"><button class="btn sm ghost" data-ed="prod" data-id="${p.id}">Editar</button>${abierta(p) ? `<button class="btn sm ghost" data-cerrar="${p.id}">Cerrar</button>` : `<button class="btn sm ghost" data-abrir="${p.id}">Abrir</button>`}<button class="btn sm danger" data-del="producciones" data-id="${p.id}">Borrar</button></div></td></tr>`;
     }), "Todavía no hay producción registrada.") + masFilas(P);
 }
 
@@ -627,7 +691,7 @@ function libro() {
     "Ventas": sortF(S.ventas).flatMap(v => v.items.map((i, n) => ({ "Fecha": v.fecha, "Cliente": nomCli(v.cliente_id), "Tipo de tostón": nomTipo(i.tipo_id), "Unidades": num(i.cantidad), "Precio": r2(i.precio), "Importe": r2(num(i.cantidad) * num(i.precio)), "Total venta": n ? "" : r2(totalVenta(v)), "Pagado": n ? "" : r2(v.pagado) }))),
     "Pagos": sortF(S.pagos).map(p => ({ "Fecha": p.fecha, "Cliente": nomCli(p.cliente_id), "Monto": r2(p.monto) })),
     "Clientes": sortN(S.clientes).map(c => ({ "Cliente": c.nombre, "Teléfono": c.telefono || "", "Notas": c.notas || "", "Debe": r2(deuda(c)) })),
-    "Existencias": S.inventario.map(r => ({ "Tipo": r.nombre, "Producidas": num(r.producidas), "Vendidas": num(r.vendidas), "Quedan": num(r.existencia) })),
+    "Producciones": [...lotesProd()].reverse().map(l => ({ "Producción": nomProd(l.p), "Estado": abierta(l.p) ? "Abierta" : "Cerrada", "Cerrada el": l.p.cerrada_en ? l.p.cerrada_en.slice(0, 10) : "", "Unidades": l.u, "Vendidas": l.vend, "Quedan / merma": l.quedan, "Gasto": r2(l.k), "Vendido": r2(l.monto), "Ganancia": r2(l.gan) })),
   };
 }
 $("xlBtn").onclick = () => {
