@@ -175,6 +175,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && E 
 function irA(t) {
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t));
   document.querySelectorAll("section.tab").forEach(s => s.hidden = s.id !== "t-" + t);
+  $("fabVenta").hidden = t === "ventas";  // en Ventas el formulario ya está ahí
   try { localStorage.setItem("tm.tab", t); } catch (_) {}
   scrollTo(0, 0);
 }
@@ -236,6 +237,7 @@ function resumenProd(it, k) {
 /* ---------- pintar todo ---------- */
 function renderAll() {
   if (!E) return;
+  LOTES = null;
   MON = emp().moneda || "$";
   document.querySelectorAll(".diasAviso").forEach(e => e.textContent = diasAviso());
   renderResumen(); renderGastos(); renderProd(); renderTipos(); renderVentas(); renderClientes(); renderEmpresa();
@@ -253,11 +255,14 @@ function renderResumen() {
   const G = S.gastos.filter(enMes), V = S.ventas.filter(enMes);
   const gt = G.reduce((a, g) => a + num(g.monto), 0), vt = V.reduce((a, v) => a + totalVenta(v), 0);
   const cobrado = V.reduce((a, v) => a + num(v.pagado), 0) + S.pagos.filter(enMes).reduce((a, p) => a + num(p.monto), 0);
-  const porCobrar = S.clientes.reduce((a, c) => a + Math.max(deuda(c), 0), 0), nDeben = S.clientes.filter(c => deuda(c) > 0.004).length, AT = atrasados(), gan = vt - gt;
+  const L = lotes(), cv = L.costoVendido[mes] || 0, merma = L.mermaMes[mes] || 0;
+  // Gastos sin grupo (gasolina, sueldos, etc.) no son de una producción: se restan en el mes en que se gastan
+  const otros = G.filter(g => !limpiaCod(g.grupo)).reduce((a, g) => a + num(g.monto), 0);
+  const porCobrar = S.clientes.reduce((a, c) => a + Math.max(deuda(c), 0), 0), nDeben = S.clientes.filter(c => deuda(c) > 0.004).length, AT = atrasados(), gan = vt - cv - merma - otros;
   $("kpis").innerHTML = `
    <button type="button" class="kpi" data-go="ventas"><span class="l">Ventas de ${fmes(mes)}</span><span class="v">${money(vt)}</span><span class="h">${V.length} ventas · cobrado ${money(cobrado)} · <u>ver</u> →</span></button>
    <button type="button" class="kpi" data-go="gastos"><span class="l">Gastos de ${fmes(mes)}</span><span class="v">${money(gt)}</span><span class="h">${G.length} gastos · <u>ver</u> →</span></button>
-   <div class="kpi hi"><div class="l">Ganancia aproximada</div><div class="v${gan < 0 ? " neg" : ""}">${money(gan)}</div><div class="h">ventas menos gastos del mes</div></div>
+   <div class="kpi hi"><div class="l">Ganancia de ${fmes(mes)}</div><div class="v${gan < 0 ? " neg" : ""}">${money(gan)}</div><div class="h">ventas menos lo que costaron los tostones vendidos (${money(cv)})${merma > 0.004 ? `, merma ${money(merma)}` : ""}${otros > 0.004 ? ` y otros gastos ${money(otros)}` : ""}</div></div>
    <button type="button" class="kpi" data-go="clientes"><span class="l">Te deben</span><span class="v" style="color:${porCobrar > 0 ? "var(--warn)" : "inherit"}">${money(porCobrar)}</span><span class="h">${nDeben ? nDeben + " cliente" + (nDeben > 1 ? "s" : "") : "nadie te debe"}${AT.length ? ` · <b style="color:var(--bad)">${AT.length} atrasado${AT.length > 1 ? "s" : ""}</b>` : ""} · <u>ver quién</u> →</span></button>`;
   $("avisos").innerHTML = AT.length ? `<div class="card aviso"><h3>${AT.length === 1 ? "1 cliente te debe" : AT.length + " clientes te deben"} desde hace más de ${diasAviso()} días</h3>${AT.map(({ c, d, f, dias }) => `<div class="avrow"><span><b>${esc(c.nombre)}</b><span class="s">${money(d)} · hace ${dias} días</span></span>${waBtn(c, d, f)}</div>`).join("")}</div>` : "";
   renderProdPanel();
@@ -276,26 +281,33 @@ function renderResumen() {
 const ts = x => Date.parse(x || "") || 0;
 const abierta = p => !p.cerrada_en;
 const nomProd = p => (p.grupo ? p.grupo + " · " : "Producción del ") + fdate(p.fecha);
-function lotesProd() {
+const mesLocal = t => { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
+function lotesProd(sinVenta) {
   const L = [...S.producciones].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.creado || "").localeCompare(b.creado || ""))
     .map(p => ({ p, k: prodCosto(p), items: prodItems(p).map(i => ({ ...i, vend: 0, monto: 0 })) }));
-  const V = [...S.ventas].sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.creado || "").localeCompare(b.creado || ""));
+  const COGS = {}, suma = (m, k) => COGS[m] = (COGS[m] || 0) + k;
+  const V = [...S.ventas].filter(v => v.id !== sinVenta).sort((a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.creado || "").localeCompare(b.creado || ""));
   V.forEach(v => (v.items || []).forEach(it => {
     let q = num(it.cantidad); const pr = num(it.precio);
     const C = L.filter(l => abierta(l.p) || ts(v.creado) < ts(l.p.cerrada_en)).flatMap(l => l.items.filter(x => x.tipo_id === it.tipo_id));
-    for (const x of C) { if (q <= 0) break; const t = Math.min(q, x.cantidad - x.vend); if (t > 0) { x.vend += t; x.monto += t * pr; q -= t; } }
-    if (q > 0 && C.length) { const x = C[C.length - 1]; x.vend += q; x.monto += q * pr; } // vendiste más de lo producido
+    const mes = (v.fecha || "").slice(0, 7), cuX = x => x.cantidad > 0 ? x.costo / x.cantidad : 0;
+    for (const x of C) { if (q <= 0) break; const t = Math.min(q, x.cantidad - x.vend); if (t > 0) { x.vend += t; x.monto += t * pr; q -= t; suma(mes, t * cuX(x)); } }
+    if (q > 0 && C.length) { const x = C[C.length - 1]; x.vend += q; x.monto += q * pr; suma(mes, q * cuX(x)); } // vendiste más de lo producido
   }));
   L.forEach(l => {
     l.u = l.items.reduce((a, x) => a + x.cantidad, 0); l.vend = l.items.reduce((a, x) => a + Math.min(x.vend, x.cantidad), 0);
     l.quedan = l.items.reduce((a, x) => a + Math.max(x.cantidad - x.vend, 0), 0); l.monto = l.items.reduce((a, x) => a + x.monto, 0);
     l.cu = l.u > 0 ? l.k / l.u : 0; l.gan = l.monto - l.k;
+    l.merma = abierta(l.p) ? 0 : l.items.reduce((a, x) => a + Math.max(x.cantidad - x.vend, 0) * (x.cantidad > 0 ? x.costo / x.cantidad : 0), 0);
   });
+  L.costoVendido = COGS; L.mermaMes = {};
+  L.forEach(l => { if (l.merma > 0) { const m = mesLocal(l.p.cerrada_en); L.mermaMes[m] = (L.mermaMes[m] || 0) + l.merma; } });
   return L;
 }
-let PSEL = "";
+let PSEL = "", LOTES = null;
+const lotes = () => LOTES || (LOTES = lotesProd());
 function renderProdPanel() {
-  const L = lotesProd(), A = L.filter(l => abierta(l.p)).reverse(), C = L.filter(l => !abierta(l.p)).sort((a, b) => ts(b.p.cerrada_en) - ts(a.p.cerrada_en));
+  const L = lotes(), A = L.filter(l => abierta(l.p)).reverse(), C = L.filter(l => !abierta(l.p)).sort((a, b) => ts(b.p.cerrada_en) - ts(a.p.cerrada_en));
   const sel = $("prodSel");
   if (!L.length) {
     sel.hidden = true; $("prodInfo").innerHTML = ""; $("prodBtns").innerHTML = "";
@@ -441,12 +453,17 @@ function linea(cont, it, onCalc) {
   sl.addEventListener("change", () => { const t = byId("tipos", sl.value); if (t && t.precio) pr.value = t.precio; onCalc(); });
   d.addEventListener("input", onCalc);
   d.querySelector(".x").onclick = () => { d.remove(); if (!cont.children.length) linea(cont, null, onCalc); onCalc(); };
+  if (cont.id === "veLines") {
+    d.insertAdjacentHTML("beforeend", `<div class="quick"><span class="stk"></span>${[5, 10, 25, 50].map(n => `<button type="button" data-mas="${n}">+${n}</button>`).join("")}<button type="button" data-mas="0" aria-label="Borrar cantidad">0</button></div>`);
+    d.querySelector(".quick").addEventListener("click", e => { const b = e.target.closest("[data-mas]"); if (!b) return; const n = +b.dataset.mas; c.value = n ? qty2(num(c.value) + n) : ""; onCalc(); });
+  }
   if (it) {
     if (!S.tipos.some(t => t.activo && t.id === it.tipo_id)) sl.insertAdjacentHTML("beforeend", `<option value="${esc(it.tipo_id)}">${esc(nomTipo(it.tipo_id))}</option>`);
     sl.value = it.tipo_id; c.value = it.cantidad ?? ""; pr.value = it.precio ?? "";
   }
   cont.appendChild(d);
 }
+const qty2 = n => String(Math.round(n * 1000) / 1000);
 const leerLineas = cont => [...cont.children].map(d => { const [s, c, p] = d.querySelectorAll("select,input"); return { tipo_id: s.value, cantidad: num(c.value), precio: num(p.value) }; }).filter(x => x.tipo_id && x.cantidad > 0);
 $("pdAdd").onclick = () => linea($("pdLines"), null, calcProd);
 function fillGrupos() {
@@ -498,7 +515,7 @@ $("fProd").addEventListener("submit", async ev => {
   catch (e) { fail(e); }
 });
 function renderProd() {
-  const P = sortF(S.producciones), LM = Object.fromEntries(lotesProd().map(l => [l.p.id, l]));
+  const P = sortF(S.producciones), LM = Object.fromEntries(lotes().map(l => [l.p.id, l]));
   $("lProd").innerHTML = tabla(`<th>Fecha</th><th>Tostones</th><th class="n">Gasto</th><th class="n">Costo c/u</th><th class="n">Margen</th><th></th>`,
     corta(P).map(p => {
       const it = prodItems(p), k = prodCosto(p), r = resumenProd(it, k);
@@ -543,11 +560,42 @@ function fillClientes() {
 $("veAdd").onclick = () => linea($("veLines"), null, calcVenta);
 $("vePago").addEventListener("change", () => { $("vePagadoBox").hidden = $("vePago").value !== "parte"; calcVenta(); });
 $("vePagado").addEventListener("input", calcVenta);
-$("veCliente").addEventListener("change", calcVenta);
+$("veCliente").addEventListener("change", () => {
+  // Venta rápida: si todavía no escribiste cantidades, pone los tostones y precios de su última compra
+  const cid = $("veCliente").value, last = cid && sortF(S.ventas).find(v => v.cliente_id === cid);
+  if (last && !$("veId").value && !leerLineas($("veLines")).length && last.items.length) {
+    $("veLines").innerHTML = "";
+    last.items.forEach(i => linea($("veLines"), { tipo_id: i.tipo_id, cantidad: "", precio: i.precio }, calcVenta));
+    toast("Puse lo que " + nomCli(cid) + " compró la última vez. Solo escribe la cantidad.");
+    $("veLines").querySelector("input")?.focus();
+  }
+  calcVenta();
+});
+/* Botón flotante: nueva venta desde cualquier pantalla */
+$("fabVenta").onclick = () => {
+  if ($("veId").value && !confirm("Estás editando una venta. ¿Dejarla y empezar una nueva?")) { irA("ventas"); $("fVenta").scrollIntoView({ behavior: "smooth" }); return; }
+  resetVenta(); irA("ventas");
+  setTimeout(() => { $("fVenta").scrollIntoView({ behavior: "smooth", block: "start" }); $("veCliente").focus({ preventScroll: true }); }, 50);
+};
 function pagadoVenta(total) { const m = $("vePago").value; return m === "todo" ? total : m === "credito" ? 0 : num($("vePagado").value); }
+/* Cuántos tostones quedan de cada tipo en las producciones abiertas (sin contar la venta que estás editando) */
+function stockTipos() {
+  const id = $("veId").value, L = id ? lotesProd(id) : lotes(), m = {};
+  L.filter(l => abierta(l.p)).forEach(l => l.items.forEach(x => m[x.tipo_id] = (m[x.tipo_id] || 0) + x.cantidad - x.vend));
+  return m;
+}
 function calcVenta() {
-  const t = totalItems(leerLineas($("veLines"))), pg = pagadoVenta(t), queda = t - pg, cli = $("veCliente").value;
+  const it = leerLineas($("veLines")), t = totalItems(it), pg = pagadoVenta(t), queda = t - pg, cli = $("veCliente").value;
+  const st = stockTipos(), pide = {}, faltan = [];
+  it.forEach(x => pide[x.tipo_id] = (pide[x.tipo_id] || 0) + x.cantidad);
+  [...$("veLines").children].forEach(d => {
+    const tid = d.querySelector("select").value, e = d.querySelector(".stk"); if (!e) return;
+    const hay = st[tid] || 0;
+    e.textContent = tid ? `Quedan ${qty(hay)}` : ""; e.classList.toggle("bad", !!tid && (pide[tid] || 0) > hay + 0.0005);
+  });
+  Object.entries(pide).forEach(([tid, q]) => { if (q > (st[tid] || 0) + 0.0005) faltan.push(`${nomTipo(tid)}: vendes ${qty(q)} y solo quedan ${qty(Math.max(st[tid] || 0, 0))}`); });
   $("veCalc").innerHTML = `<div class="t"><span>Total</span><span>${money(t)}</span></div>` +
+    (faltan.length ? `<div class="note warn">${faltan.map(esc).join("<br>")}. Revisa si falta registrar una producción.</div>` : "") +
     (queda > 0.004 ? `<div><span>Queda debiendo</span><b style="color:var(--warn)">${money(queda)}</b></div>` : "") +
     (queda > 0.004 && !cli ? `<div class="note warn">Elige el cliente para poder anotar la deuda.</div>` : "");
 }
